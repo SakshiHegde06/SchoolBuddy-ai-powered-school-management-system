@@ -1,0 +1,20 @@
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Java
+backend/target/
+*.class
+
+# Python
+ai-service/__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+
+# Environment
+.env
+
+# Uploaded files
+backend/uploads/
