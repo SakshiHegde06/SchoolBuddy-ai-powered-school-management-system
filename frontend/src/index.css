@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", serif;
+  --font-body: "Public Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --color-navy-950: #141b2e;
+  --color-navy-900: #1E2A47;
+  --color-navy-800: #2F3F63;
+  --color-navy-700: #435580;
+
+  --color-amber-500: #D9A441;
+  --color-amber-600: #BF8A2A;
+  --color-amber-100: #F5E2B8;
+
+  --color-paper-50: #FBFAF6;
+  --color-paper-100: #F7F5EF;
+  --color-paper-200: #E4E0D5;
+
+  --color-ink-900: #232323;
+  --color-ink-600: #55534C;
+  --color-ink-400: #8C8A80;
+
+  --color-success-600: #3F7D58;
+  --color-success-100: #DCEBE1;
+  --color-danger-600: #B4453A;
+  --color-danger-100: #F3DEDB;
+  --color-warning-600: #B9791F;
+  --color-warning-100: #F5E7CB;
+}
+
+body {
+  background-color: var(--color-paper-100);
+  color: var(--color-ink-900);
+  font-family: var(--font-body);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-data {
+  font-family: var(--font-mono);
+}
