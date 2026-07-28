@@ -56,3 +56,6 @@ Built using modern technologies like React, Spring Boot, MongoDB, and AI-based f
 ## Goal 🎯
 
 The goal of SCHOOLBUDDY is to reduce manual effort in school administration and provide an intelligent platform that improves interaction, transparency, and decision-making between schools, teachers, students, and parents.
+
+##screenshots
+
