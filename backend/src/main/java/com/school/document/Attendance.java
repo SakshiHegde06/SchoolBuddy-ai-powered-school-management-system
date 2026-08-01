@@ -23,6 +23,8 @@ public class Attendance {
 
     private String classId;
 
+    private String subjectId;
+
     private LocalDate date;
 
     private AttendanceStatus status;

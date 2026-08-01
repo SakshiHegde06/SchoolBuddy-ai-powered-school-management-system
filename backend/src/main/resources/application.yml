@@ -7,6 +7,8 @@ spring:
   data:
     mongodb:
        uri: ${MONGODB_URI:mongodb://localhost:27017/schoolbuddy}
+  codec:
+    log-request-details: true
 
 app:
   jwt:
@@ -25,3 +27,5 @@ logging:
   level:
     com.school: INFO
     org.springframework.security: WARN
+    org.springframework.web.reactive.function.client: TRACE
+    reactor.netty.http.client: TRACE

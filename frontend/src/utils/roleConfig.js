@@ -15,6 +15,8 @@ export const roleNavConfig = {
       { label: 'Subjects', to: '/admin/subjects', icon: 'book' },
       { label: 'Timetable generator', to: '/admin/timetable', icon: 'calendar-time' },
       { label: 'Announcements', to: '/admin/announcements', icon: 'speakerphone' },
+      { label: 'Holidays', to: '/admin/holidays', icon: 'calendar-days' },
+      { label: 'Import users', to: '/admin/import', icon: 'upload' },
       { label: 'Calendar', to: '/calendar', icon: 'calendar' },
     ],
   },
@@ -33,7 +35,6 @@ export const roleNavConfig = {
     landing: '/parent',
     links: [
       { label: 'Dashboard', to: '/parent', icon: 'layout-dashboard' },
-      { label: 'Child progress', to: '/parent/progress', icon: 'chart-line' },
       { label: 'Calendar', to: '/calendar', icon: 'calendar' },
     ],
   },

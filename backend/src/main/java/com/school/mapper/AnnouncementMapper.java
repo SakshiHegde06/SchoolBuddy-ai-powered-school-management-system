@@ -14,6 +14,7 @@ public class AnnouncementMapper {
                 .message(announcement.getMessage())
                 .priority(announcement.getPriority())
                 .createdAt(announcement.getCreatedAt())
+                .updatedAt(announcement.getUpdatedAt())
                 .build();
     }
 }

@@ -6,6 +6,7 @@ import FormField, { inputClass } from '../../components/common/FormField'
 import { classService } from '../../services/classService'
 import { studentService } from '../../services/studentService'
 import { attendanceService } from '../../services/attendanceService'
+import { subjectService } from '../../services/subjectService'
 import { useFetch } from '../../hooks/useFetch'
 
 const STATUS_OPTIONS = ['PRESENT', 'ABSENT', 'LATE']
@@ -14,13 +15,17 @@ const todayIso = new Date().toISOString().slice(0, 10)
 export default function AttendancePage() {
   const { data: classes } = useFetch(() => classService.list(), [])
   const { data: allStudents } = useFetch(() => studentService.list(), [])
+  const { data: subjectList } = useFetch(() => subjectService.list(), [])
 
   const [classId, setClassId] = useState('')
+  const [subjectId, setSubjectId] = useState('')
   const [date, setDate] = useState(todayIso)
   const [statuses, setStatuses] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
+  const [existingRecords, setExistingRecords] = useState([])
 
+  const subjects = subjectList || []
   const classStudents = (allStudents || []).filter((s) => s.classId === classId)
 
   useEffect(() => {
@@ -30,12 +35,33 @@ export default function AttendancePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId])
 
+  useEffect(() => {
+    if (!classId || !subjectId || !date) {
+      setExistingRecords([])
+      return
+    }
+
+    attendanceService.getByClassAndDate(classId, date, subjectId)
+      .then((res) => {
+        const records = res.data || []
+        setExistingRecords(records)
+        const mapped = {}
+        records.forEach((record) => {
+          mapped[record.studentId] = record.status
+        })
+        setStatuses((prev) => ({ ...prev, ...mapped }))
+      })
+      .catch(() => {
+        setExistingRecords([])
+      })
+  }, [classId, subjectId, date])
+
   async function handleSubmit() {
     setIsSubmitting(true)
     setMessage('')
     try {
       const records = classStudents.map((s) => ({ studentId: s.id, status: statuses[s.id] || 'PRESENT' }))
-      await attendanceService.mark({ classId, date, records })
+      await attendanceService.mark({ classId, subjectId, date, records })
       setMessage(`Attendance saved for ${records.length} student(s).`)
     } catch (err) {
       setMessage(err.response?.data?.message || 'Failed to save attendance.')
@@ -48,10 +74,18 @@ export default function AttendancePage() {
     <Card title="Mark attendance">
       <div className="mb-6 flex flex-wrap gap-4">
         <FormField label="Class">
-          <select className={inputClass} value={classId} onChange={(e) => setClassId(e.target.value)}>
+          <select className={inputClass} value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); }}>
             <option value="">Select a class…</option>
             {classes?.map((c) => (
               <option key={c.id} value={c.id}>{c.name} {c.section}</option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="Subject">
+          <select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+            <option value="">Select a subject…</option>
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>{subject.name}</option>
             ))}
           </select>
         </FormField>
@@ -60,13 +94,13 @@ export default function AttendancePage() {
         </FormField>
       </div>
 
-      {!classId && <p className="text-sm text-ink-400">Choose a class to see its student roster.</p>}
+      {(!classId || !subjectId) && <p className="text-sm text-ink-400">Choose a class and subject to see the student roster.</p>}
 
       {classId && classStudents.length === 0 && (
         <p className="text-sm text-ink-400">No students found in this class yet.</p>
       )}
 
-      {classId && classStudents.length > 0 && (
+      {classId && subjectId && classStudents.length > 0 && (
         <>
           <div className="divide-y divide-paper-200">
             {classStudents.map((s) => (
@@ -99,10 +133,23 @@ export default function AttendancePage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center gap-4">
-            <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+          {existingRecords.length > 0 && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mt-6">
+              <p className="text-sm text-blue-700">
+                Loaded {existingRecords.length} saved attendance record{existingRecords.length === 1 ? '' : 's'} for this class, subject and date.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !subjectId || !classId}
+            >
               {isSubmitting ? 'Saving…' : 'Save attendance'}
             </Button>
+            {!subjectId && <p className="text-sm text-red-600">Select a subject before saving attendance.</p>}
             {message && <p className="text-sm text-ink-600">{message}</p>}
           </div>
         </>

@@ -1,6 +1,8 @@
 import StatCard from '../../components/common/StatCard'
 import Card from '../../components/common/Card'
 import Spinner from '../../components/common/Spinner'
+import AnnouncementsWidget from '../../components/common/AnnouncementsWidget'
+
 import { adminService } from '../../services/adminService'
 import { useFetch } from '../../hooks/useFetch'
 
@@ -64,44 +66,18 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
 
-        <Card title="Attendance Overview">
-
-          <div className="flex h-56 items-center justify-center text-sm text-slate-500">
-            Attendance analytics will appear here.
-          </div>
-
-        </Card>
-
-        <Card title="Academic Performance">
-
-          <div className="flex h-56 items-center justify-center text-sm text-slate-500">
-            AI performance summary will appear here.
-          </div>
-
-        </Card>
-
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-
-        <Card title="Recent Announcements">
-
-          <p className="text-sm text-slate-500">
-            No announcements available.
-          </p>
-
-        </Card>
+        <AnnouncementsWidget limit={3} title="Recent Announcements" />
 
         <Card title="Upcoming Events">
 
           <p className="text-sm text-slate-500">
-            No upcoming events.
+            Calendar/events aren't wired up on the backend yet — this card is
+            still a placeholder until that feature is built.
           </p>
 
         </Card>
 
       </div>
-
     </div>
   )
 }

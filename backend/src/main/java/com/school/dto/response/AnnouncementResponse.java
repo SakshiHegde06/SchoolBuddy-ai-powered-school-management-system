@@ -1,3 +1,4 @@
+
 package com.school.dto.response;
 
 import lombok.Builder;
@@ -18,4 +19,6 @@ public class AnnouncementResponse {
     private String priority;
 
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

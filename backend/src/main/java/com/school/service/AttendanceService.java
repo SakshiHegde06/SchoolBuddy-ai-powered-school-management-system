@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface AttendanceService {
     List<AttendanceResponse> markAttendance(AttendanceMarkRequest request, String markedByTeacherId);
-    List<AttendanceResponse> getByClassAndDate(String classId, LocalDate date);
+    List<AttendanceResponse> getByClassAndDate(String classId, LocalDate date, String subjectId);
     List<AttendanceResponse> getByStudent(String studentId);
 }

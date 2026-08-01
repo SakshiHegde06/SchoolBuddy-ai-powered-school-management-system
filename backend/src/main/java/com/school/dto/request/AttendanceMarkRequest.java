@@ -15,6 +15,9 @@ public class AttendanceMarkRequest {
     @NotBlank
     private String classId;
 
+    @NotBlank
+    private String subjectId;
+
     @NotNull
     private LocalDate date;
 

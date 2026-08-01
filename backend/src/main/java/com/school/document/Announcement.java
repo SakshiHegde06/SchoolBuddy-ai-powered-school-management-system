@@ -26,4 +26,6 @@ public class Announcement {
     private String priority;
 
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

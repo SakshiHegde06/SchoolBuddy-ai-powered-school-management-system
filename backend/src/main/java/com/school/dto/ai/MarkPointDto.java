@@ -5,13 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AiPerformanceAnalysisRequest {
-    private String studentId;
-    private List<AiSubjectSeries> subjects;
+public class MarkPointDto {
+    private LocalDate date;
+    private double marksObtained;
+    private double maxMarks;
 }

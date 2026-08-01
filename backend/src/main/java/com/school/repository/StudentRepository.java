@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface StudentRepository extends MongoRepository<Student, String> {
     List<Student> findByClassId(String classId);
+    boolean existsByEmailIgnoreCase(String email);
 }

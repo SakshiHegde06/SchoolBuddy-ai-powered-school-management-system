@@ -9,6 +9,7 @@ import {
 
 import Card from '../../components/common/Card'
 import Spinner from '../../components/common/Spinner'
+import AnnouncementsWidget from '../../components/common/AnnouncementsWidget'
 import SubjectDeck from '../../components/marks/SubjectDeck'
 
 import { useAuth } from '../../hooks/useAuth'
@@ -160,6 +161,8 @@ export default function ParentDashboardPage() {
         />
 
       </div>
+
+      <AnnouncementsWidget limit={3} title="Recent Announcements" />
 
       {/* Marks */}
 

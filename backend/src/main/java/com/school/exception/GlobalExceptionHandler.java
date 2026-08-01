@@ -36,6 +36,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest req) {
         return build(HttpStatus.UNAUTHORIZED, "Invalid email or password", req, null);
     }
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ErrorResponse> handleApiException(ApiException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_GATEWAY, ex.getMessage(), req, null);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {

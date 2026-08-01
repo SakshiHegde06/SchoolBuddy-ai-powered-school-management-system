@@ -32,8 +32,9 @@ public class AttendanceController {
 
     @GetMapping("/class/{classId}")
     public List<AttendanceResponse> getByClassAndDate(@PathVariable String classId,
-                                                       @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return attendanceService.getByClassAndDate(classId, date);
+                                                       @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                                       @RequestParam("subjectId") String subjectId) {
+        return attendanceService.getByClassAndDate(classId, date, subjectId);
     }
 
     @GetMapping("/student/{studentId}")

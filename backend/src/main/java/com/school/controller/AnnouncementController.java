@@ -19,28 +19,27 @@ public class AnnouncementController {
 
     @GetMapping
     public List<AnnouncementResponse> getAll() {
-
         return announcementService.findAll();
-
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public AnnouncementResponse create(
-            @Valid @RequestBody AnnouncementRequest request
-    ) {
-
+            @Valid @RequestBody AnnouncementRequest request) {
         return announcementService.create(request);
+    }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public AnnouncementResponse update(
+            @PathVariable String id,
+            @Valid @RequestBody AnnouncementRequest request) {
+        return announcementService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public void delete(
-            @PathVariable String id
-    ) {
-
+    public void delete(@PathVariable String id) {
         announcementService.delete(id);
-
     }
 }

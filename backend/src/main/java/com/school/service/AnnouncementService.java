@@ -11,6 +11,8 @@ public interface AnnouncementService {
 
     AnnouncementResponse create(AnnouncementRequest request);
 
+    AnnouncementResponse update(String id, AnnouncementRequest request);
+
     void delete(String id);
 
 }

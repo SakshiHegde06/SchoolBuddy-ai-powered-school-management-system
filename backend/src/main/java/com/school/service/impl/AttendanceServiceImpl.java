@@ -23,31 +23,33 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public List<AttendanceResponse> markAttendance(AttendanceMarkRequest request, String markedByTeacherId) {
         List<Attendance> saved = request.getRecords().stream()
-                .map(record -> upsertOne(request.getClassId(), request.getDate(), record, markedByTeacherId))
+                .map(record -> upsertOne(request.getClassId(), request.getSubjectId(), request.getDate(), record, markedByTeacherId))
                 .toList();
 
         return saved.stream().map(AttendanceMapper::toResponse).toList();
     }
 
-    private Attendance upsertOne(String classId, LocalDate date, AttendanceRecordRequest record, String markedByTeacherId) {
+    private Attendance upsertOne(String classId, String subjectId, LocalDate date, AttendanceRecordRequest record, String markedByTeacherId) {
         Attendance attendance = attendanceRepository
-                .findByStudentIdAndDate(record.getStudentId(), date)
+                .findByStudentIdAndDateAndSubjectId(record.getStudentId(), date, subjectId)
                 .orElseGet(() -> Attendance.builder()
                         .studentId(record.getStudentId())
                         .classId(classId)
+                        .subjectId(subjectId)
                         .date(date)
                         .build());
 
         attendance.setStatus(record.getStatus());
         attendance.setClassId(classId);
+        attendance.setSubjectId(subjectId);
         attendance.setMarkedBy(markedByTeacherId);
 
         return attendanceRepository.save(attendance);
     }
 
     @Override
-    public List<AttendanceResponse> getByClassAndDate(String classId, LocalDate date) {
-        return attendanceRepository.findByClassIdAndDate(classId, date).stream()
+    public List<AttendanceResponse> getByClassAndDate(String classId, LocalDate date, String subjectId) {
+        return attendanceRepository.findByClassIdAndDateAndSubjectId(classId, date, subjectId).stream()
                 .map(AttendanceMapper::toResponse)
                 .toList();
     }

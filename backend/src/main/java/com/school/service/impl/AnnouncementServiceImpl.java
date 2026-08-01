@@ -3,6 +3,7 @@ package com.school.service.impl;
 import com.school.document.Announcement;
 import com.school.dto.request.AnnouncementRequest;
 import com.school.dto.response.AnnouncementResponse;
+import com.school.exception.ResourceNotFoundException;
 import com.school.mapper.AnnouncementMapper;
 import com.school.repository.AnnouncementRepository;
 import com.school.service.AnnouncementService;
@@ -38,6 +39,22 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .priority(request.getPriority())
                 .createdAt(Instant.now())
                 .build();
+
+        announcement = announcementRepository.save(announcement);
+
+        return AnnouncementMapper.toResponse(announcement);
+    }
+
+    @Override
+    public AnnouncementResponse update(String id, AnnouncementRequest request) {
+
+        Announcement announcement = announcementRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Announcement not found: " + id));
+
+        announcement.setTitle(request.getTitle());
+        announcement.setMessage(request.getMessage());
+        announcement.setPriority(request.getPriority());
+        announcement.setUpdatedAt(Instant.now());
 
         announcement = announcementRepository.save(announcement);
 

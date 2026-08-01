@@ -1,8 +1,9 @@
 import api from './api'
 
-// Thin wrapper around the AI performance analysis endpoint. Backed by the
-// Spring backend, which in turn calls the Python AI service for the actual
-// linear-regression work.
+// Talks to /api/performance on the Spring backend, which in turn calls the
+// FastAPI AI service. The frontend never calls the AI service directly.
 export const performanceService = {
-  getAnalysis: (studentId) => api.get(`/students/${studentId}/performance-analysis`),
+  getForStudent: (studentId) => api.get(`/performance/student/${studentId}`),
+  // Alias — AiPerformanceAnalysis.jsx calls this name.
+  getAnalysis: (studentId) => api.get(`/performance/student/${studentId}`),
 }

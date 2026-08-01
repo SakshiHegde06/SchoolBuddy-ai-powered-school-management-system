@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   CalendarDays,
   BookOpen,
@@ -9,11 +10,27 @@ import {
 
 import Card from '../../components/common/Card'
 import AiPerformanceAnalysis from '../../components/performance/AiPerformanceAnalysis'
+import AnnouncementsWidget from '../../components/common/AnnouncementsWidget'
+import SubjectDeck from '../../components/marks/SubjectDeck'
+import Spinner from '../../components/common/Spinner'
 import { useAuth } from '../../hooks/useAuth'
+import { useFetch } from '../../hooks/useFetch'
+import { markService } from '../../services/markService'
+import { subjectService } from '../../services/subjectService'
 
 export default function StudentDashboardPage() {
 
   const { user } = useAuth()
+
+  const { data: marks, isLoading: marksLoading } = useFetch(
+    () => user?.refId ? markService.findByStudent(user.refId) : Promise.resolve({ data: [] }),
+    [user?.refId]
+  )
+
+  const { data: subjects } = useFetch(
+    () => subjectService.list(),
+    []
+  )
 
   return (
 
@@ -36,6 +53,8 @@ export default function StudentDashboardPage() {
         </p>
 
       </div>
+
+      <AnnouncementsWidget limit={3} title="Latest Announcements" />
 
       {/* Summary Cards */}
 
@@ -117,6 +136,14 @@ export default function StudentDashboardPage() {
         </div>
 
       </div>
+
+      <Card title="Academic Performance">
+        {marksLoading ? (
+          <Spinner label="Loading your marks..." />
+        ) : (
+          <SubjectDeck marks={marks} subjects={subjects} />
+        )}
+      </Card>
 
       {/* Timetable + Homework */}
 

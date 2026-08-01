@@ -13,6 +13,8 @@ import { useAuth } from '../hooks/useAuth';
 // ==================== ADMIN ====================
 
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import HolidaysPage from '../pages/admin/HolidaysPage';
+import ImportUsersPage from '../pages/admin/ImportUsersPage';
 import TeachersPage from '../pages/admin/TeachersPage';
 import StudentsPage from '../pages/admin/StudentsPage';
 import ParentsPage from '../pages/admin/ParentsPage';
@@ -33,7 +35,6 @@ import TeacherStudyMaterialsPage from '../pages/teacher/StudyMaterialPage';
 // ==================== PARENT ====================
 
 import ParentDashboardPage from '../pages/parent/ParentDashboardPage';
-import ChildProgressPage from '../pages/parent/ChildProgressPage';
 
 // ==================== STUDENT ====================
 
@@ -76,6 +77,8 @@ export default function AppRoutes() {
           <Route path="subjects" element={<SubjectsPage />} />
           <Route path="timetable" element={<TimetableGeneratorPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
+          <Route path="holidays" element={<HolidaysPage />} />
+          <Route path="import" element={<ImportUsersPage />} />
         </Route>
       </Route>
 
@@ -103,7 +106,6 @@ export default function AppRoutes() {
           element={<DashboardLayout links={roleNavConfig[ROLES.PARENT].links} />}
         >
           <Route index element={<ParentDashboardPage />} />
-          <Route path="progress" element={<ChildProgressPage />} />
         </Route>
       </Route>
 

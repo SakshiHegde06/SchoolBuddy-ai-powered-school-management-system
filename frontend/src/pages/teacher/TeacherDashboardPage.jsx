@@ -8,6 +8,8 @@ import {
   FileText
 } from 'lucide-react'
 
+import AnnouncementsWidget from '../../components/common/AnnouncementsWidget'
+
 export default function TeacherDashboardPage() {
   const navigate = useNavigate()
 
@@ -141,6 +143,10 @@ export default function TeacherDashboardPage() {
         </div>
 
       </div>
+
+      {/* Announcements */}
+
+      <AnnouncementsWidget />
 
     </div>
   )
