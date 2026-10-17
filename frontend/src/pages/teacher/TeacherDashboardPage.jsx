@@ -217,20 +217,52 @@ export default function TeacherDashboardPage() {
   return (
     <div className="space-y-8">
 
-      {/* Welcome Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 p-8 text-white shadow-xl">
-        <p className="mt-2 text-blue-100">
-          Manage your classes, assignments, attendance, study materials and student performance from one dashboard.
-        </p>
+      {/* Executive Faculty Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-7 sm:p-8 text-white shadow-xl border border-slate-800">
+        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute right-1/4 -bottom-20 h-56 w-56 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 px-3.5 py-1 text-xs font-semibold text-indigo-300 mb-3 border border-indigo-400/30">
+              <GraduationCap className="h-4 w-4 text-indigo-400" />
+              <span>Faculty Workspace • {assignedClassIds?.length || 0} Assigned Classes</span>
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+              Welcome back, {user?.name || 'Teacher'}
+            </h1>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Manage your classrooms, publish syllabus notes with live AI previews,
+              track subject attendance, and evaluate academic marks from one consolidated workspace.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => navigate('/teacher/materials')}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+            >
+              <FileText className="h-4 w-4 text-amber-300" />
+              <span>Study Materials Studio</span>
+            </button>
+            <button
+              onClick={() => navigate('/teacher/attendance')}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm backdrop-blur-md transition cursor-pointer"
+            >
+              <ClipboardCheck className="h-4 w-4 text-emerald-400" />
+              <span>Take Attendance</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Timetable */}
-      <div className="rounded-2xl bg-white shadow-md border p-6">
+      <div className="rounded-3xl bg-white shadow-xs border border-slate-200 p-6 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <CalendarDays size={28} className="text-blue-600" />
+            <CalendarDays size={26} className="text-indigo-600" />
             <div>
-              <h2 className="text-2xl font-semibold text-gray-800">
+              <h2 className="text-xl font-bold text-slate-900">
                 Class Timetable
               </h2>
               <p className="text-xs text-slate-500">
@@ -386,38 +418,40 @@ export default function TeacherDashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-2xl font-bold text-blue-700 mb-5">
-          Quick Actions
+        <h2 className="font-display text-xl font-bold text-slate-900 mb-5">
+          Classroom Workspace Tools
         </h2>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {actions.map((action) => {
             const Icon = action.icon
 
             return (
               <div
                 key={action.title}
-                className="rounded-2xl border bg-white p-6 shadow-md hover:shadow-xl transition-all"
+                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-xs hover:border-indigo-300 hover:shadow-md transition-all flex flex-col justify-between"
               >
-                <div
-                  className={`flex h-14 w-14 items-center justify-center rounded-2xl ${action.color}`}
-                >
-                  <Icon size={28} />
+                <div>
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl ${action.color} group-hover:scale-105 transition-transform`}
+                  >
+                    <Icon size={24} />
+                  </div>
+
+                  <h3 className="mt-4 text-base font-bold text-slate-900 group-hover:text-indigo-900 transition-colors">
+                    {action.title}
+                  </h3>
+
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                    {action.description}
+                  </p>
                 </div>
-
-                <h3 className="mt-5 text-xl font-semibold text-gray-800">
-                  {action.title}
-                </h3>
-
-                <p className="mt-2 text-sm text-gray-500">
-                  {action.description}
-                </p>
 
                 <button
                   onClick={() => navigate(action.path)}
-                  className="mt-6 w-full rounded-xl bg-blue-600 py-3 font-medium text-white transition hover:bg-blue-700"
+                  className="mt-5 w-full rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-600 cursor-pointer shadow-xs"
                 >
-                  Open
+                  Access {action.title} &rarr;
                 </button>
               </div>
             )

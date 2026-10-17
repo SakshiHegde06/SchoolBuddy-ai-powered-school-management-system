@@ -1,40 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Fraunces", serif;
-  --font-body: "Public Sans", sans-serif;
-  --font-mono: "IBM Plex Mono", monospace;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
-  --color-navy-950: #141b2e;
-  --color-navy-900: #1E2A47;
-  --color-navy-800: #2F3F63;
-  --color-navy-700: #435580;
+  --color-navy-950: #090D16;
+  --color-navy-900: #0F172A;
+  --color-navy-800: #1E293B;
+  --color-navy-700: #334155;
 
-  --color-amber-500: #D9A441;
-  --color-amber-600: #BF8A2A;
-  --color-amber-100: #F5E2B8;
+  --color-amber-500: #F59E0B;
+  --color-amber-600: #D97706;
+  --color-amber-100: #FEF3C7;
 
-  --color-paper-50: #FBFAF6;
-  --color-paper-100: #F7F5EF;
-  --color-paper-200: #E4E0D5;
+  --color-paper-50: #FFFFFF;
+  --color-paper-100: #F8FAFC;
+  --color-paper-200: #E2E8F0;
+  --color-paper-300: #CBD5E1;
 
-  --color-ink-900: #232323;
-  --color-ink-600: #55534C;
-  --color-ink-400: #8C8A80;
+  --color-ink-900: #0F172A;
+  --color-ink-600: #475569;
+  --color-ink-400: #94A3B8;
 
-  --color-success-600: #3F7D58;
-  --color-success-100: #DCEBE1;
-  --color-danger-600: #B4453A;
-  --color-danger-100: #F3DEDB;
-  --color-warning-600: #B9791F;
-  --color-warning-100: #F5E7CB;
+  --color-success-600: #16A34A;
+  --color-success-100: #DCFCE7;
+  --color-danger-600: #DC2626;
+  --color-danger-100: #FEE2E2;
+  --color-warning-600: #D97706;
+  --color-warning-100: #FEF3C7;
 }
 
 body {
   background-color: var(--color-paper-100);
   color: var(--color-ink-900);
   font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-display {
