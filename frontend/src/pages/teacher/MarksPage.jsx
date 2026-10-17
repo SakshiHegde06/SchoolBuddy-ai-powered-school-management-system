@@ -192,7 +192,11 @@ export default function MarksPage() {
     }
   }
 
-  const subjectNameFor = (id) => subjects?.find((s) => s.id === id)?.name || '—'
+  const subjectNameFor = (id) => {
+    if (!id) return '—'
+    const found = subjects?.find((s) => s.id === id || s.name?.toLowerCase() === id?.toLowerCase())
+    return found?.name || id || '—'
+  }
 
   return (
     <div className="space-y-6">

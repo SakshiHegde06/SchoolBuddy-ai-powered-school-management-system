@@ -19,6 +19,7 @@ public class MarkServiceImpl implements MarkService {
 
     private final MarkRepository markRepository;
     private final com.school.repository.ExamRepository examRepository;
+    private final com.school.repository.StudentRepository studentRepository;
 
     private void validateMarks(MarkRequest request) {
         if (request.getMarksObtained() < 0) {
@@ -62,15 +63,17 @@ public class MarkServiceImpl implements MarkService {
     public MarkResponse create(MarkRequest request, String enteredByTeacherId) {
         validateMarks(request);
 
-        // Check if an existing mark exists for this student and exam to prevent duplicates
+        // Check if an existing mark exists for this student, subject, and exam to prevent duplicates
         java.util.Optional<MarkEntry> existing = java.util.Optional.empty();
         if (request.getExamId() != null && !request.getExamId().isBlank()) {
             existing = markRepository.findByExamId(request.getExamId()).stream()
-                    .filter(m -> request.getStudentId().equals(m.getStudentId()))
+                    .filter(m -> request.getStudentId().equals(m.getStudentId())
+                            && java.util.Objects.equals(request.getSubjectId(), m.getSubjectId()))
                     .findFirst();
         } else if (request.getStudentId() != null && request.getSubjectId() != null && request.getTerm() != null) {
             existing = markRepository.findByStudentIdAndSubjectId(request.getStudentId(), request.getSubjectId()).stream()
-                    .filter(m -> request.getTerm().equalsIgnoreCase(m.getTerm()))
+                    .filter(m -> request.getTerm().equalsIgnoreCase(m.getTerm())
+                            && (request.getType() == null || request.getType().equals(m.getType())))
                     .findFirst();
         }
 
@@ -112,7 +115,22 @@ public class MarkServiceImpl implements MarkService {
 
     @Override
     public List<MarkResponse> findByStudent(String studentId) {
-        return markRepository.findByStudentId(studentId).stream()
+        List<MarkEntry> entries = new java.util.ArrayList<>(markRepository.findByStudentId(studentId));
+        if (entries.isEmpty() && studentRepository != null) {
+            // Also check if studentId passed is a User ID instead of student doc ID
+            studentRepository.findByUserId(studentId).ifPresent(s -> {
+                entries.addAll(markRepository.findByStudentId(s.getId()));
+            });
+            // Or if studentId passed is student doc ID but marks were saved with userId
+            if (entries.isEmpty()) {
+                studentRepository.findById(studentId).ifPresent(s -> {
+                    if (s.getUserId() != null && !s.getUserId().isBlank()) {
+                        entries.addAll(markRepository.findByStudentId(s.getUserId()));
+                    }
+                });
+            }
+        }
+        return entries.stream()
                 .map(MarkMapper::toResponse)
                 .toList();
     }

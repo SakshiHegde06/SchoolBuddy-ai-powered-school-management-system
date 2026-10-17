@@ -15,14 +15,35 @@ function computeGrade(pct) {
 export default function SubjectDeck({ marks, subjects, teacherMap = {}, attendance = [], onOpenTranscript }) {
   const [activeView, setActiveView] = useState('table') // 'table' | 'chart'
 
+  const allSubjects = useMemo(() => {
+    const list = [...(subjects || [])]
+    ;(marks || []).forEach((m) => {
+      if (!m.subjectId) return
+      const found = list.find(
+        (s) => s.id === m.subjectId || s.name?.toLowerCase() === m.subjectId?.toLowerCase()
+      )
+      if (!found) {
+        list.push({
+          id: m.subjectId,
+          name: m.subjectName || `Subject (${m.subjectId.slice(0, 5)})`,
+        })
+      }
+    })
+    return list
+  }, [subjects, marks])
+
   const marksBySubject = useMemo(() => {
     const map = {}
     ;(marks || []).forEach((m) => {
-      if (!map[m.subjectId]) map[m.subjectId] = []
-      map[m.subjectId].push(m)
+      const match = allSubjects.find(
+        (s) => s.id === m.subjectId || s.name?.toLowerCase() === m.subjectId?.toLowerCase()
+      )
+      const key = match ? match.id : m.subjectId
+      if (!map[key]) map[key] = []
+      map[key].push(m)
     })
     return map
-  }, [marks])
+  }, [marks, allSubjects])
 
   const attendanceBySubject = useMemo(() => {
     const map = {}
@@ -34,13 +55,6 @@ export default function SubjectDeck({ marks, subjects, teacherMap = {}, attendan
     })
     return map
   }, [attendance])
-
-  const knownSubjectIds = new Set((subjects || []).map((s) => s.id))
-  const extraSubjects = Object.keys(marksBySubject)
-    .filter((id) => !knownSubjectIds.has(id))
-    .map((id) => ({ id, name: `Subject (${id.slice(0, 5)})` }))
-
-  const allSubjects = [...(subjects || []), ...extraSubjects]
 
   const subjectsWithData = allSubjects.map((s) => {
     const subjectMarks = marksBySubject[s.id] || []
@@ -96,11 +110,13 @@ export default function SubjectDeck({ marks, subjects, teacherMap = {}, attendan
   const allMarkEntries = useMemo(() => {
     const list = []
     ;(marks || []).forEach((m) => {
-      const sub = allSubjects.find((s) => s.id === m.subjectId)
+      const sub = allSubjects.find(
+        (s) => s.id === m.subjectId || s.name?.toLowerCase() === m.subjectId?.toLowerCase()
+      )
       const subName = sub ? sub.name : (m.subjectName || `Subject (${m.subjectId?.slice(0, 5)})`)
       const pct = m.maxMarks > 0 ? Math.round((m.marksObtained / m.maxMarks) * 100) : 0
       const grade = computeGrade(pct)
-      const teacher = sub?.teacherName || teacherMap[m.subjectId] || null
+      const teacher = sub?.teacherName || teacherMap[m.subjectId] || (sub ? teacherMap[sub.id] : null)
       list.push({
         ...m,
         subjectName: subName,
