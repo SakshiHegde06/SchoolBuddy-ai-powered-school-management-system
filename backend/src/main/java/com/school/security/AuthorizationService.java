@@ -30,7 +30,12 @@ public class AuthorizationService {
         // touch Student.userId, which is the *reverse* link (User's own id)
         // and was never the right field to compare principalRefId against.
         if (role != null && role.equals("STUDENT")) {
-            return principalRefId != null && principalRefId.equals(studentId);
+            if (principalRefId != null && principalRefId.equals(studentId)) return true;
+            Student s = studentRepository.findById(studentId).orElse(null);
+            if (s != null && principal instanceof CustomUserDetails cud) {
+                if (s.getUserId() != null && s.getUserId().equals(cud.getUser().getId())) return true;
+            }
+            return false;
         }
 
         Student student = studentRepository.findById(studentId).orElse(null);
@@ -38,13 +43,16 @@ public class AuthorizationService {
 
         // Parent linked to student?
         if (role != null && role.equals("PARENT")) {
-            if (parentStudentRepository.existsByParentIdAndStudentIdAndUnlinkedAtIsNull(principalRefId, studentId)) {
+            if (principalRefId != null && parentStudentRepository.existsByParentIdAndStudentIdAndUnlinkedAtIsNull(principalRefId, studentId)) {
                 return true;
             }
             if (principalRefId != null && parentRepository != null) {
-                return parentRepository.findById(principalRefId)
-                        .map(p -> p.getChildrenIds() != null && p.getChildrenIds().contains(studentId))
-                        .orElse(false);
+                if (parentRepository.findById(principalRefId).map(p -> p.getChildrenIds() != null && p.getChildrenIds().contains(studentId)).orElse(false)) {
+                    return true;
+                }
+            }
+            if (principalRefId != null && student.getParentIds() != null && student.getParentIds().contains(principalRefId)) {
+                return true;
             }
             return false;
         }

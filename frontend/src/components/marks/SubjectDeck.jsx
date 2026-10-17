@@ -14,10 +14,17 @@ export default function SubjectDeck({ marks, subjects, teacherMap = {} }) {
     return map
   }, [marks])
 
-  const subjectsWithData = (subjects || []).map((s) => {
+  const knownSubjectIds = new Set((subjects || []).map((s) => s.id))
+  const extraSubjects = Object.keys(marksBySubject)
+    .filter((id) => !knownSubjectIds.has(id))
+    .map((id) => ({ id, name: `Subject (${id.slice(0, 5)})` }))
+
+  const allSubjects = [...(subjects || []), ...extraSubjects]
+
+  const subjectsWithData = allSubjects.map((s) => {
     const subjectMarks = marksBySubject[s.id] || []
     const avgPct = subjectMarks.length > 0
-      ? subjectMarks.reduce((sum, m) => sum + (m.marksObtained / m.maxMarks) * 100, 0) / subjectMarks.length
+      ? subjectMarks.reduce((sum, m) => sum + (m.maxMarks > 0 ? (m.marksObtained / m.maxMarks) * 100 : 0), 0) / subjectMarks.length
       : null
     const teacherName = s.teacherName || teacherMap[s.id] || null
     return { ...s, marks: subjectMarks, avgPct, teacherName }
@@ -25,16 +32,27 @@ export default function SubjectDeck({ marks, subjects, teacherMap = {} }) {
 
   const defaultSelected = subjectsWithData.find((s) => s.marks.length > 0)?.id || null
   const [selectedId, setSelectedId] = useState(defaultSelected)
+
+  // Ensure selectedId updates once async marks load
+  useEffect(() => {
+    if (!selectedId && defaultSelected) {
+      setSelectedId(defaultSelected)
+    }
+  }, [defaultSelected, selectedId])
+
   const selected = subjectsWithData.find((s) => s.id === selectedId)
 
   const chartData = (selected?.marks || [])
     .slice()
     .sort((a, b) => (a.date > b.date ? 1 : -1))
-    .map((m) => ({
-      label: `${m.term} · ${m.type.charAt(0)}${m.type.slice(1).toLowerCase()}`,
-      pct: Math.round((m.marksObtained / m.maxMarks) * 100),
-      score: `${m.marksObtained}/${m.maxMarks}`,
-    }))
+    .map((m) => {
+      const typeStr = m.type ? `${m.type.charAt(0)}${m.type.slice(1).toLowerCase()}` : 'Exam'
+      return {
+        label: `${m.term || 'Exam'} · ${typeStr}`,
+        pct: m.maxMarks > 0 ? Math.round((m.marksObtained / m.maxMarks) * 100) : 0,
+        score: `${m.marksObtained}/${m.maxMarks}`,
+      }
+    })
 
   if (subjectsWithData.length === 0) {
     return <p className="text-sm text-ink-400">No subjects set up yet.</p>
