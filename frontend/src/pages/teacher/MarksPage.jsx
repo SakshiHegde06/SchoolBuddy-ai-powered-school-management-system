@@ -67,6 +67,7 @@ export default function MarksPage() {
 
   // Exams apply either to a specific subject, or to every subject in the class (subjectId === null)
   const examOptions = (exams || []).filter((e) => !subjectId || !e.subjectId || e.subjectId === subjectId)
+  const availableExams = examOptions.length > 0 ? examOptions : (exams || [])
   const selectedExam = (exams || []).find((e) => e.id === examId)
 
   const classStudents = (allStudents || []).filter((s) => s.classId === classId)
@@ -114,7 +115,7 @@ export default function MarksPage() {
             subjectId,
             academicYearId: activeAcademicYear,
             term: selectedExam.name,
-            type: selectedExam.type,
+            type: selectedExam.type || 'EXAM',
             marksObtained: Number(marksObtained),
             maxMarks: selectedExam.maxMarks,
             date: todayIso,
@@ -159,7 +160,7 @@ export default function MarksPage() {
             subjectId,
             academicYearId: activeAcademicYear,
             term: selectedExam.name,
-            type: selectedExam.type,
+            type: selectedExam.type || 'EXAM',
             marksObtained: Number(marksObtained),
             maxMarks: selectedExam.maxMarks,
             date: todayIso,
@@ -198,6 +199,11 @@ export default function MarksPage() {
     return found?.name || id || '—'
   }
 
+  const selectedClassName = visibleClasses?.find((c) => c.id === classId)
+    ? `${visibleClasses.find((c) => c.id === classId).name} ${visibleClasses.find((c) => c.id === classId).section || ''}`.trim()
+    : 'Class'
+  const selectedSubName = subjectNameFor(subjectId)
+
   return (
     <div className="space-y-6">
       <Card title="Enter marks in bulk">
@@ -219,15 +225,24 @@ export default function MarksPage() {
           <FormField label="Exam">
             <select className={inputClass} value={examId} onChange={(e) => setExamId(e.target.value)} disabled={!subjectId}>
               <option value="">Select an exam…</option>
-              {examOptions.map((e) => <option key={e.id} value={e.id}>{e.name} (max {e.maxMarks})</option>)}
+              {availableExams.map((e) => <option key={e.id} value={e.id}>{e.name} (max {e.maxMarks})</option>)}
             </select>
           </FormField>
         </div>
 
-        {subjectId && examOptions.length === 0 && (
+        {classId && subjectId && !examId && availableExams.length > 0 && (
+          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-800 flex items-center gap-2">
+            <span className="text-base">👉</span>
+            <span>
+              Please select an <strong>Exam</strong> (e.g. <strong>{availableExams[0]?.name || 'FA1'}</strong>) from the 3rd dropdown above to view the student score entry sheet.
+            </span>
+          </div>
+        )}
+
+        {subjectId && availableExams.length === 0 && (
           <EmptyState
-            title="No exams set up for this class/subject yet"
-            description="Ask an admin to create one on the Exams page (e.g. FA1, Mid-Term) before entering marks."
+            title="No exams set up for this class yet"
+            description="Ask an admin to create an exam on the Exams page (e.g. FA1, Mid-Term) before entering marks."
           />
         )}
 
@@ -324,8 +339,14 @@ export default function MarksPage() {
       </Card>
 
       {classId && subjectId && (
-        <Card title="Class analytics (overview & student performance)">
-          <ClassAnalytics classId={classId} subjectId={subjectId} refetchKey={message} />
+        <Card title={`Class Analytics · ${selectedClassName} (${selectedSubName})`}>
+          <ClassAnalytics
+            classId={classId}
+            subjectId={subjectId}
+            className={selectedClassName}
+            subjectName={selectedSubName}
+            refetchKey={message}
+          />
         </Card>
       )}
 
@@ -340,7 +361,7 @@ export default function MarksPage() {
 
 // Class-level averages/highest/lowest/pass% and a "needs attention" list,
 // computed server-side from published marks only.
-function ClassAnalytics({ classId, subjectId, refetchKey }) {
+function ClassAnalytics({ classId, subjectId, className, subjectName, refetchKey }) {
   const { data: stats, isLoading, error, refetch } = useFetch(
     () => performanceService.getForClass(classId, subjectId),
     [classId, subjectId, refetchKey]
@@ -357,8 +378,8 @@ function ClassAnalytics({ classId, subjectId, refetchKey }) {
   if (!stats || stats.studentCount === 0) {
     return (
       <EmptyState
-        title="No marks recorded yet for this class & subject"
-        description="Class Analytics automatically calculates the class average, highest/lowest scores, pass percentage, and highlights students needing attention once marks are saved above."
+        title={`No marks recorded yet for ${subjectName || 'this subject'}`}
+        description={`Class Analytics automatically computes the class average, top/lowest scores, pass percentage, and highlights students needing attention once marks are saved for ${subjectName || 'this subject'} in ${className || 'this class'}.`}
       />
     )
   }
