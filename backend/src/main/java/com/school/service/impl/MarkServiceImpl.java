@@ -20,6 +20,7 @@ public class MarkServiceImpl implements MarkService {
     private final MarkRepository markRepository;
     private final com.school.repository.ExamRepository examRepository;
     private final com.school.repository.StudentRepository studentRepository;
+    private final com.school.repository.SubjectRepository subjectRepository;
 
     private void validateMarks(MarkRequest request) {
         if (request.getMarksObtained() < 0) {
@@ -115,23 +116,47 @@ public class MarkServiceImpl implements MarkService {
 
     @Override
     public List<MarkResponse> findByStudent(String studentId) {
-        List<MarkEntry> entries = new java.util.ArrayList<>(markRepository.findByStudentId(studentId));
-        if (entries.isEmpty() && studentRepository != null) {
-            // Also check if studentId passed is a User ID instead of student doc ID
-            studentRepository.findByUserId(studentId).ifPresent(s -> {
-                entries.addAll(markRepository.findByStudentId(s.getId()));
+        java.util.Set<String> possibleStudentIds = new java.util.LinkedHashSet<>();
+        possibleStudentIds.add(studentId);
+
+        if (studentRepository != null) {
+            studentRepository.findById(studentId).ifPresent(s -> {
+                possibleStudentIds.add(s.getId());
+                if (s.getUserId() != null && !s.getUserId().isBlank()) {
+                    possibleStudentIds.add(s.getUserId());
+                }
             });
-            // Or if studentId passed is student doc ID but marks were saved with userId
-            if (entries.isEmpty()) {
-                studentRepository.findById(studentId).ifPresent(s -> {
-                    if (s.getUserId() != null && !s.getUserId().isBlank()) {
-                        entries.addAll(markRepository.findByStudentId(s.getUserId()));
-                    }
-                });
+            studentRepository.findByUserId(studentId).ifPresent(s -> {
+                possibleStudentIds.add(s.getId());
+                if (s.getUserId() != null && !s.getUserId().isBlank()) {
+                    possibleStudentIds.add(s.getUserId());
+                }
+            });
+        }
+
+        java.util.Map<String, String> subjectMap = new java.util.HashMap<>();
+        if (subjectRepository != null) {
+            subjectRepository.findAll().forEach(s -> subjectMap.put(s.getId(), s.getName()));
+        }
+
+        List<MarkEntry> entries = new java.util.ArrayList<>();
+        for (String id : possibleStudentIds) {
+            for (MarkEntry m : markRepository.findByStudentId(id)) {
+                if (entries.stream().noneMatch(e -> e.getId() != null && e.getId().equals(m.getId()))) {
+                    entries.add(m);
+                }
             }
         }
+
         return entries.stream()
-                .map(MarkMapper::toResponse)
+                .map(m -> {
+                    MarkResponse resp = MarkMapper.toResponse(m);
+                    if (resp.getSubjectName() == null || resp.getSubjectName().isBlank()) {
+                        String name = subjectMap.get(m.getSubjectId());
+                        resp.setSubjectName(name != null ? name : m.getSubjectId());
+                    }
+                    return resp;
+                })
                 .toList();
     }
 

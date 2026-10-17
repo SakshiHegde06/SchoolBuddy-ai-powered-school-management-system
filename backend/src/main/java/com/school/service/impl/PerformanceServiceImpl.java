@@ -17,8 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,18 +59,61 @@ public class PerformanceServiceImpl implements PerformanceService {
 
     @Override
     public ClassPerformanceResponse getClassPerformance(String classId, String subjectId) {
-        List<MarkEntry> marks = (subjectId == null || subjectId.isBlank())
-                ? markRepository.findByClassId(classId)
-                : markRepository.findByClassIdAndSubjectId(classId, subjectId);
+        // 1. Gather all students belonging to this class
+        List<Student> studentsInClass = studentRepository.findByClassId(classId);
+        Set<String> classStudentIds = new HashSet<>();
+        Map<String, String> studentNamesById = new HashMap<>();
+        for (Student s : studentsInClass) {
+            classStudentIds.add(s.getId());
+            studentNamesById.put(s.getId(), s.getName());
+            if (s.getUserId() != null && !s.getUserId().isBlank()) {
+                classStudentIds.add(s.getUserId());
+                studentNamesById.put(s.getUserId(), s.getName());
+            }
+        }
 
-        // Only published marks count towards analytics students/teachers would act on together
-        marks = marks.stream().filter(m -> m.getStatus() == MarkStatus.PUBLISHED).toList();
+        // 2. Resolve Subject (by id or by name)
+        Subject subject = null;
+        if (subjectId != null && !subjectId.isBlank()) {
+            subject = subjectRepository.findById(subjectId).orElse(null);
+            if (subject == null) {
+                subject = subjectRepository.findAll().stream()
+                        .filter(s -> subjectId.equalsIgnoreCase(s.getName()) || subjectId.equalsIgnoreCase(s.getId()))
+                        .findFirst().orElse(null);
+            }
+        }
+        final String resolvedSubId = subject != null ? subject.getId() : subjectId;
+        final String resolvedSubName = subject != null ? subject.getName() : null;
+
+        // 3. Find marks for this class and subject
+        List<MarkEntry> allClassMarks = markRepository.findAll().stream()
+                .filter(m -> classId.equals(m.getClassId()) || classStudentIds.contains(m.getStudentId()))
+                .filter(m -> {
+                    if (resolvedSubId == null || resolvedSubId.isBlank()) return true;
+                    return resolvedSubId.equals(m.getSubjectId())
+                            || (resolvedSubName != null && resolvedSubName.equalsIgnoreCase(m.getSubjectId()));
+                })
+                .toList();
+
+        // Prefer published marks, but fallback to all available marks so analytics are not blank
+        List<MarkEntry> marks = allClassMarks.stream()
+                .filter(m -> m.getStatus() == MarkStatus.PUBLISHED)
+                .toList();
+        if (marks.isEmpty()) {
+            marks = allClassMarks;
+        }
 
         Map<String, List<MarkEntry>> byStudent = marks.stream()
                 .collect(Collectors.groupingBy(MarkEntry::getStudentId));
 
-        Map<String, String> studentNamesById = studentRepository.findAllById(byStudent.keySet()).stream()
-                .collect(Collectors.toMap(Student::getId, Student::getName));
+        // Populate any missing student names from repo
+        Set<String> missingStudentIds = byStudent.keySet().stream()
+                .filter(id -> !studentNamesById.containsKey(id))
+                .collect(Collectors.toSet());
+        if (!missingStudentIds.isEmpty()) {
+            studentRepository.findAllById(missingStudentIds)
+                    .forEach(s -> studentNamesById.put(s.getId(), s.getName()));
+        }
 
         List<ClassPerformanceResponse.StudentAverage> studentAverages = byStudent.entrySet().stream()
                 .map(e -> {

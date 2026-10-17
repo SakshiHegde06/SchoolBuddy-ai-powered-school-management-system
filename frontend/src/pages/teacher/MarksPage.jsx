@@ -324,8 +324,8 @@ export default function MarksPage() {
       </Card>
 
       {classId && subjectId && (
-        <Card title="Class analytics (published marks only)">
-          <ClassAnalytics classId={classId} subjectId={subjectId} />
+        <Card title="Class analytics (overview & student performance)">
+          <ClassAnalytics classId={classId} subjectId={subjectId} refetchKey={message} />
         </Card>
       )}
 
@@ -340,16 +340,27 @@ export default function MarksPage() {
 
 // Class-level averages/highest/lowest/pass% and a "needs attention" list,
 // computed server-side from published marks only.
-function ClassAnalytics({ classId, subjectId }) {
-  const { data: stats, isLoading, error } = useFetch(
+function ClassAnalytics({ classId, subjectId, refetchKey }) {
+  const { data: stats, isLoading, error, refetch } = useFetch(
     () => performanceService.getForClass(classId, subjectId),
-    [classId, subjectId]
+    [classId, subjectId, refetchKey]
   )
+
+  useEffect(() => {
+    if (classId && subjectId) {
+      refetch()
+    }
+  }, [refetchKey])
 
   if (isLoading) return <p className="text-sm text-ink-600">Loading class analytics…</p>
   if (error) return <p className="text-sm text-danger-600">Couldn't load class analytics.</p>
   if (!stats || stats.studentCount === 0) {
-    return <EmptyState title="No published marks yet" description="Analytics appear here once you've published marks for this class/subject." />
+    return (
+      <EmptyState
+        title="No marks recorded yet for this class & subject"
+        description="Class Analytics automatically calculates the class average, highest/lowest scores, pass percentage, and highlights students needing attention once marks are saved above."
+      />
+    )
   }
 
   return (
