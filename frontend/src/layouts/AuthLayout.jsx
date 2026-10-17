@@ -34,13 +34,6 @@ export default function AuthLayout() {
               <li>📖 Study Materials</li>
 
               <li>📢 School Announcements</li>
-
-              <li>🤖 AI Learning Insights</li>
-
-              <li>👨‍🏫 Parent–Teacher Communication</li>
-
-              <li>🗓️ Class Timetable Management</li>
-
             </ul>
           </div>
 
