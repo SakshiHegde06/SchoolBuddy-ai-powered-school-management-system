@@ -12,4 +12,6 @@ public interface StudentRepository extends MongoRepository<Student, String> {
     List<Student> findByClassIdIn(List<String> classIds);
     Page<Student> findByClassIdIn(List<String> classIds, Pageable pageable);
     boolean existsByEmailIgnoreCase(String email);
+    boolean existsByClassIdAndRollNumber(String classId, String rollNumber);
+    boolean existsByClassIdAndRollNumberAndIdNot(String classId, String rollNumber, String id);
 }

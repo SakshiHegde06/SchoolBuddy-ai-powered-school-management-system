@@ -42,7 +42,12 @@ public class StudentServiceImpl implements StudentService {
     @Transactional
     public StudentResponse create(StudentRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("An account with this email already exists");
+            throw new DuplicateResourceException("An account with email '" + request.getEmail() + "' already exists");
+        }
+        if (request.getClassId() != null && request.getRollNumber() != null && !request.getRollNumber().isBlank()) {
+            if (studentRepository.existsByClassIdAndRollNumber(request.getClassId(), request.getRollNumber().trim())) {
+                throw new DuplicateResourceException("A student with roll number '" + request.getRollNumber().trim() + "' already exists in this class");
+            }
         }
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new IllegalArgumentException("Password is required when creating a student");
@@ -84,6 +89,21 @@ public class StudentServiceImpl implements StudentService {
     @Transactional
     public StudentResponse update(String id, StudentRequest request) {
         Student student = getOrThrow(id);
+
+        // Check unique email if updated
+        if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase(student.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new DuplicateResourceException("An account with email '" + request.getEmail() + "' already exists");
+            }
+        }
+
+        // Check unique roll number within class
+        String targetClassId = request.getClassId() != null ? request.getClassId() : student.getClassId();
+        if (targetClassId != null && request.getRollNumber() != null && !request.getRollNumber().isBlank()) {
+            if (studentRepository.existsByClassIdAndRollNumberAndIdNot(targetClassId, request.getRollNumber().trim(), id)) {
+                throw new DuplicateResourceException("A student with roll number '" + request.getRollNumber().trim() + "' already exists in this class");
+            }
+        }
 
         student.setName(request.getName());
         student.setDob(request.getDob());
