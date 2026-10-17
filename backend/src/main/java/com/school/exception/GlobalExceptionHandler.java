@@ -55,6 +55,20 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), req, null);
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(org.springframework.web.multipart.MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "File size exceeds the maximum allowed limit (50MB). Please choose a smaller PDF document.", req, null);
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MultipartException.class)
+    public ResponseEntity<ErrorResponse> handleMultipartException(org.springframework.web.multipart.MultipartException ex, HttpServletRequest req) {
+        String msg = ex.getMessage();
+        if (msg != null && (msg.contains("SizeLimitExceededException") || msg.contains("FileSizeLimitExceededException") || msg.contains("exceeds its maximum permitted size"))) {
+            return build(HttpStatus.PAYLOAD_TOO_LARGE, "File size exceeds the maximum allowed limit (50MB). Please choose a smaller PDF document.", req, null);
+        }
+        return build(HttpStatus.BAD_REQUEST, "File upload error: " + (msg != null ? msg : "Invalid multipart request"), req, null);
+    }
+
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(Exception.class)

@@ -176,6 +176,14 @@ export default function StudyMaterialPage() {
           setIsSubmitting(false)
           return
         }
+        if (file.size > 50 * 1024 * 1024) {
+          setMessage({
+            text: `File size (${(file.size / (1024 * 1024)).toFixed(1)}MB) exceeds the 50MB limit. Please upload a PDF under 50MB.`,
+            type: 'error',
+          })
+          setIsSubmitting(false)
+          return
+        }
         formData.append('file', file)
       } else {
         if (!form.externalUrl || !form.externalUrl.trim()) {
@@ -472,7 +480,17 @@ export default function StudyMaterialPage() {
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
-                        setFile(e.target.files[0])
+                        const selectedFile = e.target.files[0]
+                        if (selectedFile.size > 50 * 1024 * 1024) {
+                          setMessage({
+                            text: `"${selectedFile.name}" is ${(selectedFile.size / (1024 * 1024)).toFixed(1)}MB, which exceeds the 50MB limit. Please choose a smaller PDF.`,
+                            type: 'error',
+                          })
+                          setFile(null)
+                          if (fileInputRef.current) fileInputRef.current.value = ''
+                          return
+                        }
+                        setFile(selectedFile)
                         setMessage(null)
                       }
                     }}

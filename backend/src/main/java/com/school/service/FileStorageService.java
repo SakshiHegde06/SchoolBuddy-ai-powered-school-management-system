@@ -42,7 +42,10 @@ public class FileStorageService {
         Path destination = resolveSafely(storedFileName);
 
         try (var in = file.getInputStream()) {
-            Files.copy(in, destination);
+            if (destination.getParent() != null) {
+                Files.createDirectories(destination.getParent());
+            }
+            Files.copy(in, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to store file " + storedFileName, e);
         }

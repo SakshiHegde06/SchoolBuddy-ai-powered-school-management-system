@@ -74,8 +74,10 @@ public class StudyMaterialServiceImpl implements StudyMaterialService {
             if (file == null || file.isEmpty()) {
                 throw new ApiException("A PDF file is required for material type PDF.");
             }
-            if (!"application/pdf".equals(file.getContentType())) {
-                throw new ApiException("Only PDF files are allowed.");
+            boolean isPdf = (file.getContentType() != null && file.getContentType().toLowerCase().contains("pdf"))
+                    || (file.getOriginalFilename() != null && file.getOriginalFilename().toLowerCase().endsWith(".pdf"));
+            if (!isPdf) {
+                throw new IllegalArgumentException("Only PDF files are allowed.");
             }
             String storedFileName = fileStorageService.store(file);
             material.fileName(storedFileName).originalFileName(file.getOriginalFilename());

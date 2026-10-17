@@ -11,6 +11,11 @@ spring:
     log-request-details: true
   main:
     allow-bean-definition-overriding: true # Prevents CORS bean collision crashes
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 app:
   jwt:
