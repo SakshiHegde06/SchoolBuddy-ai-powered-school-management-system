@@ -112,9 +112,9 @@ export default function VerifyTranscriptPage() {
               </div>
 
               <div className="rounded-xl bg-slate-900/60 p-3.5 border border-slate-700/50">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Cumulative GPA</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Marks</span>
                 <span className="font-bold text-base text-emerald-400 mt-0.5 block">
-                  {transcript.gpa.toFixed(2)} / 4.0
+                  {transcript.totalMarksObtained} / {transcript.totalMaxMarks}
                 </span>
                 <span className="text-[10px] text-slate-400 font-medium">
                   {transcript.overallPercentage}% (Grade {transcript.overallGrade})

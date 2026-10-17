@@ -55,68 +55,40 @@ public class ReportServiceImpl implements ReportService {
         double grandTotalObtained = 0.0;
         double grandTotalMax = 0.0;
 
-        if (!marksBySubject.isEmpty()) {
-            for (Map.Entry<String, List<MarkEntry>> entry : marksBySubject.entrySet()) {
-                String subId = entry.getKey();
-                Subject subject = subjectMap.get(subId);
-                String subName = subject != null ? subject.getName() : "Subject (" + subId + ")";
-                String subCode = subject != null && subject.getCode() != null ? subject.getCode() : "SUB-" + subId.substring(0, Math.min(4, subId.length())).toUpperCase();
+        if (marks.isEmpty() || marksBySubject.isEmpty()) {
+            throw new com.school.exception.ResourceNotFoundException(
+                "No marks have been assigned yet for this student. The marks card can only be generated once teachers submit exam results (e.g. FA1, Mid-term)."
+            );
+        }
 
-                double subObtained = entry.getValue().stream().mapToDouble(MarkEntry::getMarksObtained).sum();
-                double subMax = entry.getValue().stream().mapToDouble(MarkEntry::getMaxMarks).sum();
-                if (subMax <= 0) subMax = 100.0;
+        for (Map.Entry<String, List<MarkEntry>> entry : marksBySubject.entrySet()) {
+            String subId = entry.getKey();
+            Subject subject = subjectMap.get(subId);
+            String subName = subject != null ? subject.getName() : "Subject (" + subId + ")";
+            String subCode = subject != null && subject.getCode() != null ? subject.getCode() : "SUB-" + subId.substring(0, Math.min(4, subId.length())).toUpperCase();
 
-                double subPct = Math.round((subObtained / subMax) * 1000.0) / 10.0;
-                String grade = computeGrade(subPct);
-                double gpa = computeGpa(subPct);
-                String status = subPct >= 50.0 ? (subPct >= 80.0 ? "DISTINCTION" : "PASS") : "FAIL";
+            double subObtained = entry.getValue().stream().mapToDouble(MarkEntry::getMarksObtained).sum();
+            double subMax = entry.getValue().stream().mapToDouble(MarkEntry::getMaxMarks).sum();
+            if (subMax <= 0) subMax = 100.0;
 
-                grandTotalObtained += subObtained;
-                grandTotalMax += subMax;
+            double subPct = Math.round((subObtained / subMax) * 1000.0) / 10.0;
+            String grade = computeGrade(subPct);
+            String status = subPct >= 50.0 ? (subPct >= 80.0 ? "DISTINCTION" : "PASS") : "FAIL";
 
-                subjectDtos.add(TranscriptReportDto.SubjectPerformanceDto.builder()
-                        .subjectId(subId)
-                        .subjectName(subName)
-                        .subjectCode(subCode)
-                        .marksObtained(subObtained)
-                        .maxMarks(subMax)
-                        .percentage(subPct)
-                        .grade(grade)
-                        .gradePoints(gpa)
-                        .status(status)
-                        .build());
-            }
-        } else {
-            // Default curricular subjects if no mark records exist yet
-            List<Subject> allSubs = subjectRepository.findAll();
-            if (allSubs.isEmpty()) {
-                allSubs = List.of(
-                        Subject.builder().id("1").name("Mathematics").code("MATH101").build(),
-                        Subject.builder().id("2").name("Science").code("SCI102").build(),
-                        Subject.builder().id("3").name("English Language").code("ENG103").build(),
-                        Subject.builder().id("4").name("Social Studies").code("SOC104").build()
-                );
-            }
+            grandTotalObtained += subObtained;
+            grandTotalMax += subMax;
 
-            for (Subject s : allSubs) {
-                double mockObtained = 82.0;
-                double mockMax = 100.0;
-                double pct = 82.0;
-                grandTotalObtained += mockObtained;
-                grandTotalMax += mockMax;
-
-                subjectDtos.add(TranscriptReportDto.SubjectPerformanceDto.builder()
-                        .subjectId(s.getId())
-                        .subjectName(s.getName())
-                        .subjectCode(s.getCode() != null ? s.getCode() : "SUB-101")
-                        .marksObtained(mockObtained)
-                        .maxMarks(mockMax)
-                        .percentage(pct)
-                        .grade(computeGrade(pct))
-                        .gradePoints(computeGpa(pct))
-                        .status("PASS")
-                        .build());
-            }
+            subjectDtos.add(TranscriptReportDto.SubjectPerformanceDto.builder()
+                    .subjectId(subId)
+                    .subjectName(subName)
+                    .subjectCode(subCode)
+                    .marksObtained(subObtained)
+                    .maxMarks(subMax)
+                    .percentage(subPct)
+                    .grade(grade)
+                    .gradePoints(0.0)
+                    .status(status)
+                    .build());
         }
 
         // Overall stats
@@ -132,13 +104,10 @@ public class ReportServiceImpl implements ReportService {
                 .filter(a -> a.getStatus() == AttendanceStatus.PRESENT)
                 .count();
 
-        if (totalDays == 0) {
-            totalDays = 45;
-            daysPresent = 42;
-        }
-
-        double attendancePct = Math.round(((double) daysPresent / totalDays) * 1000.0) / 10.0;
-        String attendanceStatus = attendancePct >= 85.0 ? "Exemplary Attendance" : (attendancePct >= 75.0 ? "Regular" : "Needs Improvement");
+        double attendancePct = totalDays > 0 ? Math.round(((double) daysPresent / totalDays) * 1000.0) / 10.0 : 0.0;
+        String attendanceStatus = totalDays > 0 
+                ? (attendancePct >= 85.0 ? "Exemplary Attendance" : (attendancePct >= 75.0 ? "Regular" : "Needs Improvement"))
+                : "No Attendance Records";
 
         // 5. Remarks
         List<Remark> remarks = remarkRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
@@ -146,13 +115,6 @@ public class ReportServiceImpl implements ReportService {
                 .map(Remark::getRemark)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-        if (remarkTexts.isEmpty()) {
-            remarkTexts = List.of(
-                    "Demonstrates consistent dedication, active classroom participation, and strong problem-solving initiative.",
-                    "Commendable analytical thinking and cooperative conduct in group academic projects."
-            );
-        }
 
         // 6. Verification Code
         String cleanId = studentId.replaceAll("[^a-zA-Z0-9]", "");

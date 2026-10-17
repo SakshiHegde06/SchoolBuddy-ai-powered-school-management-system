@@ -35,7 +35,7 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
       })
       .catch((err) => {
         console.error('Error fetching marks card:', err)
-        setError('Failed to generate marks card for this student.')
+        setError(err.response?.data?.message || 'No marks have been assigned yet for this student. The marks card will be available once teachers submit exam results (e.g. FA1).')
       })
       .finally(() => {
         setIsLoading(false)
@@ -118,9 +118,12 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
               </p>
             </div>
           ) : error || !transcript ? (
-            <div className="rounded-xl bg-rose-50 border border-rose-200 p-6 text-center text-rose-700 space-y-2">
-              <AlertCircle className="h-8 w-8 mx-auto text-rose-500" />
-              <p className="text-sm font-semibold">{error || 'Could not load marks card.'}</p>
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-8 text-center text-amber-800 space-y-3 m-4">
+              <AlertCircle className="h-10 w-10 mx-auto text-amber-600" />
+              <h3 className="text-base font-bold text-amber-900">Marks Not Yet Assigned</h3>
+              <p className="text-xs text-amber-700 max-w-md mx-auto">
+                {error || 'Marks have not been recorded yet for this student. The marks card will be generated once teachers submit exam results (e.g. FA1, Mid-term).'}
+              </p>
             </div>
           ) : (
             /* Clean, Compact Printable Marks Card */
@@ -240,16 +243,16 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
                   </div>
                 </div>
 
-                {/* GPA & Standing */}
+                {/* Total Marks */}
                 <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    GPA Score
+                    Total Marks
                   </span>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-base font-bold text-blue-700">
-                      {transcript.gpa?.toFixed(2)}
+                      {transcript.totalMarksObtained}
                     </span>
-                    <span className="text-[11px] text-slate-500">/ 4.0</span>
+                    <span className="text-[11px] text-slate-500">/ {transcript.totalMaxMarks}</span>
                   </div>
                 </div>
 
