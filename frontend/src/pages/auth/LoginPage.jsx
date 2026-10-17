@@ -56,7 +56,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="yourname@college.edu"
+            placeholder="admin@school.edu"
             className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
         </div>
@@ -71,9 +71,27 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            placeholder="ChangeMe123!"
             className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
+        </div>
+
+        {/* Demo Credentials Helper Box */}
+        <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 flex items-center justify-between">
+          <div>
+            <span className="font-semibold text-blue-700">Demo Account:</span>
+            <div className="font-mono text-gray-600 mt-0.5">admin@school.edu &bull; ChangeMe123!</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('admin@school.edu')
+              setPassword('ChangeMe123!')
+            }}
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition cursor-pointer text-xs"
+          >
+            Auto-fill
+          </button>
         </div>
 
         {error && (
