@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { reportService } from '../../services/reportService'
-import QRCodeSVG from '../common/QRCodeSVG'
 import {
   X,
   Printer,
@@ -303,17 +302,15 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
                 </div>
               )}
 
-              {/* Clean Footer with Small QR Code & Date (No Principal/Teacher Signatures) */}
+              {/* Clean Footer with Official Verification ID & Date */}
               <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-0.5 border border-slate-200 rounded bg-white">
-                    <QRCodeSVG value={transcript.verificationUrl || transcript.verificationCode} size={42} />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-emerald-600" />
                   <div>
-                    <span className="text-[10px] font-mono text-slate-500 block">
-                      ID: {transcript.verificationCode}
+                    <span className="text-[11px] font-mono font-semibold text-slate-700 block">
+                      Verification ID: {transcript.verificationCode}
                     </span>
-                    <span className="text-[9px] text-slate-400">Scan to verify marks online</span>
+                    <span className="text-[10px] text-slate-400">Official Springfield School Record</span>
                   </div>
                 </div>
 
