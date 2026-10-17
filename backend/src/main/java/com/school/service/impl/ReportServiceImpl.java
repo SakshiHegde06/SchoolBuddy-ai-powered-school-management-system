@@ -61,6 +61,11 @@ public class ReportServiceImpl implements ReportService {
             );
         }
 
+        List<Attendance> attendances = attendanceRepository.findByStudentId(studentId);
+        Map<String, List<Attendance>> attBySub = attendances.stream()
+                .filter(a -> a.getSubjectId() != null)
+                .collect(Collectors.groupingBy(Attendance::getSubjectId));
+
         for (Map.Entry<String, List<MarkEntry>> entry : marksBySubject.entrySet()) {
             String subId = entry.getKey();
             Subject subject = subjectMap.get(subId);
@@ -75,6 +80,16 @@ public class ReportServiceImpl implements ReportService {
             String grade = computeGrade(subPct);
             String status = subPct >= 50.0 ? (subPct >= 80.0 ? "DISTINCTION" : "PASS") : "FAIL";
 
+            List<Attendance> subAttList = attBySub.getOrDefault(subId, Collections.emptyList());
+            int subTotalDays = subAttList.size();
+            int subPresentDays = (int) subAttList.stream()
+                    .filter(a -> a.getStatus() == AttendanceStatus.PRESENT)
+                    .count();
+            Double subAttPct = subTotalDays > 0 ? Math.round(((double) subPresentDays / subTotalDays) * 1000.0) / 10.0 : null;
+            String subAttStatus = subAttPct != null 
+                    ? (subAttPct >= 75.0 ? "Eligible (>=75%)" : "Shortage (<75%)") 
+                    : "No Attendance Recorded";
+
             grandTotalObtained += subObtained;
             grandTotalMax += subMax;
 
@@ -88,6 +103,8 @@ public class ReportServiceImpl implements ReportService {
                     .grade(grade)
                     .gradePoints(0.0)
                     .status(status)
+                    .attendancePercentage(subAttPct)
+                    .attendanceStatus(subAttStatus)
                     .build());
         }
 
@@ -98,7 +115,6 @@ public class ReportServiceImpl implements ReportService {
         String standing = computeStanding(overallPct);
 
         // 4. Attendance
-        List<Attendance> attendances = attendanceRepository.findByStudentId(studentId);
         int totalDays = attendances.size();
         int daysPresent = (int) attendances.stream()
                 .filter(a -> a.getStatus() == AttendanceStatus.PRESENT)

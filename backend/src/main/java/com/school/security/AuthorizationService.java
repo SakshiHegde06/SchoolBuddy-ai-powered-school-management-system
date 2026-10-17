@@ -34,6 +34,7 @@ public class AuthorizationService {
             Student s = studentRepository.findById(studentId).orElse(null);
             if (s != null && principal instanceof CustomUserDetails cud) {
                 if (s.getUserId() != null && s.getUserId().equals(cud.getUser().getId())) return true;
+                if (s.getEmail() != null && s.getEmail().equalsIgnoreCase(cud.getUser().getEmail())) return true;
             }
             return false;
         }
@@ -53,6 +54,18 @@ public class AuthorizationService {
             }
             if (principalRefId != null && student.getParentIds() != null && student.getParentIds().contains(principalRefId)) {
                 return true;
+            }
+            if (principal instanceof CustomUserDetails cud && cud.getUser() != null) {
+                String userId = cud.getUser().getId();
+                if (student.getParentIds() != null && student.getParentIds().contains(userId)) {
+                    return true;
+                }
+                var pOpt = parentRepository.findByUserId(userId);
+                if (pOpt.isPresent()) {
+                    var p = pOpt.get();
+                    if (p.getChildrenIds() != null && p.getChildrenIds().contains(studentId)) return true;
+                    if (student.getParentIds() != null && student.getParentIds().contains(p.getId())) return true;
+                }
             }
             return false;
         }

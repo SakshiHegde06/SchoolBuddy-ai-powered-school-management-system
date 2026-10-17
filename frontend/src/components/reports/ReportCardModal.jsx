@@ -177,7 +177,8 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
                       <th className="p-2.5 text-center border-r border-slate-200 w-24">Max Marks</th>
                       <th className="p-2.5 text-center border-r border-slate-200 w-28">Marks Obtained</th>
                       <th className="p-2.5 text-center border-r border-slate-200 w-24">Percentage</th>
-                      <th className="p-2.5 text-center w-20">Grade</th>
+                      <th className="p-2.5 text-center border-r border-slate-200 w-20">Grade</th>
+                      <th className="p-2.5 text-center w-36">Attendance (≥75%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
@@ -198,8 +199,23 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
                         <td className="p-2 text-center font-medium text-slate-700 border-r border-slate-200">
                           {sub.percentage}%
                         </td>
-                        <td className="p-2 text-center font-bold text-blue-700">
+                        <td className="p-2 text-center border-r border-slate-200 font-bold text-blue-700">
                           {sub.grade}
+                        </td>
+                        <td className="p-2 text-center text-[11px]">
+                          {sub.attendancePercentage !== null && sub.attendancePercentage !== undefined ? (
+                            <span
+                              className={`px-2 py-0.5 rounded font-bold ${
+                                sub.attendancePercentage >= 75
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {sub.attendancePercentage}% ({sub.attendancePercentage >= 75 ? 'Eligible' : 'Shortage'})
+                            </span>
+                          ) : (
+                            <span className="text-emerald-700 font-bold">Eligible (≥75%)</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -218,8 +234,11 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
                       <td className="p-2.5 text-center border-r border-slate-200 text-blue-700 font-bold">
                         {transcript.overallPercentage}%
                       </td>
-                      <td className="p-2.5 text-center text-emerald-700 font-bold">
+                      <td className="p-2.5 text-center border-r border-slate-200 text-emerald-700 font-bold">
                         {transcript.overallGrade}
+                      </td>
+                      <td className="p-2.5 text-center text-emerald-700 font-bold text-[11px]">
+                        ≥75% Per Subject
                       </td>
                     </tr>
                   </tbody>
@@ -256,17 +275,17 @@ export default function ReportCardModal({ studentId, isOpen = true, onClose }) {
                   </div>
                 </div>
 
-                {/* Attendance */}
+                {/* Attendance Rule */}
                 <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Attendance
+                    Subject Attendance Rule
                   </span>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="font-bold text-slate-800">
-                      {transcript.attendancePercentage}%
+                    <span className="font-bold text-slate-800 text-[11px]">
+                      Min 75% Per Subject
                     </span>
-                    <span className="text-[11px] text-slate-500">
-                      {transcript.daysPresent}/{transcript.totalWorkingDays} days
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      Standard
                     </span>
                   </div>
                 </div>

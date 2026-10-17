@@ -67,5 +67,7 @@ public class TranscriptReportDto {
         private String grade;
         private double gradePoints;
         private String status; // PASS, DISTINCTION
+        private Double attendancePercentage;
+        private String attendanceStatus; // e.g. "Eligible (>=75%)" or "Shortage (<75%)"
     }
 }

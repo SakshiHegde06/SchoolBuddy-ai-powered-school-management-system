@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface ParentRepository extends MongoRepository<Parent, String> {
     Optional<Parent> findByEmailIgnoreCase(String email);
+    Optional<Parent> findByUserId(String userId);
 }

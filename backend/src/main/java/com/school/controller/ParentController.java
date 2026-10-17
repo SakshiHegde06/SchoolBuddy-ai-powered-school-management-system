@@ -41,28 +41,48 @@ public class ParentController {
 
     @GetMapping("/{id}/children")
     public List<StudentResponse> getChildren(@PathVariable String id, @AuthenticationPrincipal CustomUserDetails principal) {
-        // Only parent themselves or admin can call this
         String principalRef = principal != null ? principal.getUser().getRefId() : null;
         String role = principal != null ? principal.getUser().getRole().name() : null;
+        String userId = principal != null && principal.getUser() != null ? principal.getUser().getId() : null;
 
-        if (!("ADMIN".equals(role) || (principalRef != null && principalRef.equals(id)))) {
+        boolean isAuthorized = "ADMIN".equals(role)
+                || (principalRef != null && principalRef.equals(id))
+                || (userId != null && userId.equals(id))
+                || (userId != null && parentRepository.findByUserId(userId).map(p -> p.getId().equals(id)).orElse(false));
+
+        if (!isAuthorized) {
             throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this parent's children");
         }
 
+        // If 'id' is a User ID instead of Parent ID, resolve parent ID
+        String effectiveParentId = id;
+        var parentByUserId = parentRepository.findByUserId(id);
+        if (parentByUserId.isPresent()) {
+            effectiveParentId = parentByUserId.get().getId();
+        }
+
         List<String> studentIds = new java.util.ArrayList<>(
-                parentStudentRepository.findByParentIdAndUnlinkedAtIsNull(id)
+                parentStudentRepository.findByParentIdAndUnlinkedAtIsNull(effectiveParentId)
                         .stream()
-                        .map(link -> link.getStudentId())
+                        .map(com.school.document.ParentStudent::getStudentId)
                         .toList()
         );
 
-        if (studentIds.isEmpty()) {
-            parentRepository.findById(id).ifPresent(p -> {
-                if (p.getChildrenIds() != null && !p.getChildrenIds().isEmpty()) {
-                    studentIds.addAll(p.getChildrenIds());
-                }
-            });
-        }
+        parentRepository.findById(effectiveParentId).ifPresent(p -> {
+            if (p.getChildrenIds() != null && !p.getChildrenIds().isEmpty()) {
+                p.getChildrenIds().forEach(cId -> {
+                    if (!studentIds.contains(cId)) studentIds.add(cId);
+                });
+            }
+        });
+
+        // Reciprocal lookup: students that reference this parent or user in their parentIds list
+        final String finalParentId = effectiveParentId;
+        studentRepository.findAll().stream()
+                .filter(s -> s.getParentIds() != null && (s.getParentIds().contains(finalParentId) || s.getParentIds().contains(id)))
+                .forEach(s -> {
+                    if (!studentIds.contains(s.getId())) studentIds.add(s.getId());
+                });
 
         if (studentIds.isEmpty()) {
             return List.of();
