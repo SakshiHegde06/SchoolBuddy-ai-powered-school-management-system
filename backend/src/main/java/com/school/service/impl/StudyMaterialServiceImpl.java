@@ -2,12 +2,18 @@ package com.school.service.impl;
 
 import com.school.document.MaterialType;
 import com.school.document.StudyMaterial;
+import com.school.document.SchoolClass;
+import com.school.document.Subject;
+import com.school.document.Teacher;
 import com.school.dto.request.StudyMaterialRequest;
 import com.school.dto.response.StudyMaterialResponse;
 import com.school.exception.ApiException;
 import com.school.exception.ResourceNotFoundException;
 import com.school.mapper.StudyMaterialMapper;
+import com.school.repository.ClassRepository;
 import com.school.repository.StudyMaterialRepository;
+import com.school.repository.SubjectRepository;
+import com.school.repository.TeacherRepository;
 import com.school.service.FileStorageService;
 import com.school.service.StudyMaterialService;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +29,34 @@ public class StudyMaterialServiceImpl implements StudyMaterialService {
 
     private final StudyMaterialRepository studyMaterialRepository;
     private final FileStorageService fileStorageService;
+    private final SubjectRepository subjectRepository;
+    private final ClassRepository classRepository;
+    private final TeacherRepository teacherRepository;
 
     @Override
     public List<StudyMaterialResponse> findByClass(String classId) {
         return studyMaterialRepository.findByClassIdOrderByUploadedAtDesc(classId).stream()
-                .map(StudyMaterialMapper::toResponse)
+                .map(this::enrich)
                 .toList();
+    }
+
+    @Override
+    public List<StudyMaterialResponse> findAll() {
+        return studyMaterialRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getUploadedAt() == null && b.getUploadedAt() == null) return 0;
+                    if (a.getUploadedAt() == null) return 1;
+                    if (b.getUploadedAt() == null) return -1;
+                    return b.getUploadedAt().compareTo(a.getUploadedAt());
+                })
+                .map(this::enrich)
+                .toList();
+    }
+
+    @Override
+    public StudyMaterialResponse getResponseById(String id) {
+        StudyMaterial material = getOrThrow(id);
+        return enrich(material);
     }
 
     @Override
@@ -58,7 +86,8 @@ public class StudyMaterialServiceImpl implements StudyMaterialService {
             material.externalUrl(request.getExternalUrl().trim());
         }
 
-        return StudyMaterialMapper.toResponse(studyMaterialRepository.save(material.build()));
+        StudyMaterial saved = studyMaterialRepository.save(material.build());
+        return enrich(saved);
     }
 
     @Override
@@ -74,5 +103,41 @@ public class StudyMaterialServiceImpl implements StudyMaterialService {
     public StudyMaterial getOrThrow(String id) {
         return studyMaterialRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Study material not found: " + id));
+    }
+
+    private StudyMaterialResponse enrich(StudyMaterial material) {
+        String subjectName = null;
+        if (material.getSubjectId() != null) {
+            subjectName = subjectRepository.findById(material.getSubjectId())
+                    .map(Subject::getName)
+                    .orElse(null);
+        }
+
+        String className = null;
+        if (material.getClassId() != null) {
+            className = classRepository.findById(material.getClassId())
+                    .map(c -> c.getName() + (c.getSection() != null && !c.getSection().isBlank() ? " " + c.getSection() : ""))
+                    .orElse(null);
+        }
+
+        String teacherName = null;
+        if (material.getTeacherId() != null) {
+            teacherName = teacherRepository.findById(material.getTeacherId())
+                    .map(Teacher::getName)
+                    .orElse(null);
+        }
+
+        Long fileSize = null;
+        if (material.getType() == MaterialType.PDF && material.getFileName() != null) {
+            try {
+                var res = fileStorageService.loadAsResource(material.getFileName());
+                if (res.exists()) {
+                    fileSize = res.contentLength();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return StudyMaterialMapper.toResponse(material, subjectName, className, teacherName, fileSize);
     }
 }

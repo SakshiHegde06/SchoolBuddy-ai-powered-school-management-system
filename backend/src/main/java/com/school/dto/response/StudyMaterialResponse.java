@@ -16,11 +16,15 @@ public class StudyMaterialResponse {
     private String id;
     private String classId;
     private String subjectId;
+    private String subjectName;
+    private String className;
     private String teacherId;
+    private String teacherName;
     private String title;
     private MaterialType type;
     private String originalFileName;
     private String externalUrl;
     private String downloadUrl; // populated for PDF only
+    private Long fileSize;
     private Instant uploadedAt;
 }

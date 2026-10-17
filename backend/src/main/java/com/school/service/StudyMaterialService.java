@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface StudyMaterialService {
     List<StudyMaterialResponse> findByClass(String classId);
+    List<StudyMaterialResponse> findAll();
     StudyMaterialResponse create(StudyMaterialRequest request, String teacherId);
     void delete(String id);
 
@@ -15,4 +16,6 @@ public interface StudyMaterialService {
     // download endpoint needs the stored file name / original file name,
     // which aren't part of the public response shape.
     StudyMaterial getOrThrow(String id);
+
+    StudyMaterialResponse getResponseById(String id);
 }
