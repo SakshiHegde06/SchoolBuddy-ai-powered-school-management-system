@@ -49,14 +49,9 @@ public class AuthorizationService {
             return false;
         }
 
-        // Teacher assigned to student's class?
+        // Teacher: allow viewing students in the school
         if (role != null && role.equals("TEACHER")) {
-            String classId = student.getClassId();
-            if (classId == null) return false;
-            LocalDate now = LocalDate.now();
-            return teacherAssignmentRepository.findActiveAssignmentsByTeacherAtDate(principalRefId, now)
-                    .stream()
-                    .anyMatch(a -> classId.equals(a.getClassId()));
+            return true;
         }
 
         return false;

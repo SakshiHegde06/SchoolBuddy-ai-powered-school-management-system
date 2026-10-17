@@ -384,13 +384,19 @@ function Stat({ label, value }) {
 
 // Small helper: lets the teacher pick one student to review their full mark
 // history (including status), without cluttering the bulk-entry flow above.
-function StudentMarksHistory({ classId, students, subjectNameFor }) {
+function StudentMarksHistory({ classId, students, subjectNameFor, refetchKey }) {
   const [studentId, setStudentId] = useState('')
 
-  const { data: studentMarks, refetch } = useFetch(
+  const { data: studentMarks, isLoading, refetch } = useFetch(
     () => (studentId ? markService.findByStudent(studentId) : Promise.resolve({ data: [] })),
-    [studentId]
+    [studentId, refetchKey]
   )
+
+  useEffect(() => {
+    if (studentId) {
+      refetch()
+    }
+  }, [refetchKey])
 
   const columns = [
     { key: 'subject', header: 'Subject', render: (row) => subjectNameFor(row.subjectId) },
@@ -413,7 +419,7 @@ function StudentMarksHistory({ classId, students, subjectNameFor }) {
         row.status !== 'PUBLISHED' ? (
           <button
             type="button"
-            className="rounded bg-navy-800 px-2.5 py-1 text-xs font-semibold text-white hover:bg-navy-900 transition"
+            className="rounded bg-navy-800 px-2.5 py-1 text-xs font-semibold text-white hover:bg-navy-900 transition cursor-pointer"
             onClick={async () => {
               try {
                 await markService.publish(row.id)
@@ -436,10 +442,16 @@ function StudentMarksHistory({ classId, students, subjectNameFor }) {
       <FormField label="Student">
         <select className={inputClass} value={studentId} onChange={(e) => setStudentId(e.target.value)} disabled={!classId}>
           <option value="">Select a student…</option>
-          {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {students.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.rollNumber ? `Roll #${s.rollNumber}` : 'No Roll#'})</option>)}
         </select>
       </FormField>
-      {studentId && <Table columns={columns} rows={studentMarks} emptyLabel="No marks recorded yet." />}
+      {studentId && (
+        isLoading ? (
+          <p className="py-6 text-center text-xs text-slate-500">Loading student records…</p>
+        ) : (
+          <Table columns={columns} rows={studentMarks || []} emptyLabel="No marks recorded yet for this student." />
+        )
+      )}
     </div>
   )
 }
