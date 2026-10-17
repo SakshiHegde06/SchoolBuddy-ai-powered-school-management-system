@@ -22,7 +22,13 @@ export default function LoginPage() {
       const user = await login(email, password)
       navigate(roleNavConfig[user.role]?.landing || '/')
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password')
+      if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else if (!err.response) {
+        setError('Cannot connect to backend server. If Render just deployed or went to sleep, please wait 20-30 seconds and try again!')
+      } else {
+        setError('Invalid email or password')
+      }
     } finally {
       setIsSubmitting(false)
     }
