@@ -2,8 +2,6 @@ import { useState, useMemo } from 'react'
 import ClassTimetableWidget from "../../components/ClassTimetableWidget";
 import {
   Users,
-  ClipboardCheck,
-  GraduationCap,
   MessageSquare,
   Brain,
 } from 'lucide-react'
@@ -26,7 +24,6 @@ import { subjectService } from '../../services/subjectService'
 import { remarkService } from '../../services/remarkService'
 import { teacherAssignmentService } from '../../services/teacherAssignmentService'
 
-import { formatPercent } from '../../utils/formatters'
 
 export default function ParentDashboardPage() {
 
@@ -167,29 +164,6 @@ export default function ParentDashboardPage() {
         </div>
       )}
 
-      {/* Summary */}
-
-      <div className="grid gap-5 md:grid-cols-3">
-
-        <SummaryCard
-          icon={<ClipboardCheck size={20} />}
-          label="Attendance"
-          value={formatPercent(attendancePct)}
-        />
-
-        <SummaryCard
-          icon={<GraduationCap size={20} />}
-          label="Subjects"
-          value={subjects?.length || 0}
-        />
-
-        <SummaryCard
-          icon={<Brain size={20} />}
-          label="AI Status"
-          value="Coming Soon"
-        />
-
-      </div>
 
       <AnnouncementsWidget limit={3} title="Recent Announcements" />
 
@@ -282,36 +256,4 @@ export default function ParentDashboardPage() {
 
     </div>
   )
-}
-
-function SummaryCard({ icon, label, value }) {
-
-  return (
-
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <p className="text-sm text-slate-500">
-            {label}
-          </p>
-
-          <h2 className="mt-2 text-2xl font-bold text-slate-900">
-            {value}
-          </h2>
-
-        </div>
-
-        <div className="rounded-lg bg-slate-100 p-3 text-slate-700">
-          {icon}
-        </div>
-
-      </div>
-
-    </div>
-
-  )
-
 }
