@@ -56,32 +56,30 @@ public class AiTutorServiceImpl implements AiTutorService {
     public AiTutorResponse getTutorResponseForMaterial(String materialId, AiTutorRequest request) {
         StudyMaterial material = studyMaterialRepository.findById(materialId).orElse(null);
         String subjectName = "Science";
-        String extractedText = "";
 
-        if (material != null) {
-            if (material.getSubjectId() != null) {
-                subjectName = subjectRepository.findById(material.getSubjectId())
-                        .map(Subject::getName)
-                        .orElse(subjectName);
-            }
-            if (material.getType() == MaterialType.PDF && material.getFileName() != null) {
-                extractedText = extractPdfTextSafely(material.getFileName());
-            }
+        if (material != null && material.getSubjectId() != null) {
+            subjectName = subjectRepository.findById(material.getSubjectId())
+                    .map(Subject::getName)
+                    .orElse(subjectName);
         }
 
         if (request == null) {
             request = new AiTutorRequest();
         }
 
-        // Fill in subject / topic from material if not passed
         if (request.getSubject() == null || request.getSubject().isBlank()) {
             request.setSubject(subjectName);
         }
         if (request.getTopic() == null || request.getTopic().isBlank()) {
-            request.setTopic(material != null && material.getTitle() != null ? material.getTitle() : "Curriculum Concepts");
+            String title = material != null ? material.getTitle() : null;
+            if (title == null || title.toLowerCase().endsWith(".pdf") || title.toLowerCase().startsWith("unit")) {
+                request.setTopic("Core Curriculum Concepts");
+            } else {
+                request.setTopic(title);
+            }
         }
 
-        return generateCurriculumResponse(request, extractedText);
+        return generateCurriculumResponse(request, "");
     }
 
     @Override
@@ -834,7 +832,7 @@ public class AiTutorServiceImpl implements AiTutorService {
                 .difficulty("Easy")
                 .build());
 
-        return list;
+        return prioritizeAndRenumber(list, topic);
     }
 
     // -----------------------------------------------------------------------------------------
@@ -1108,7 +1106,7 @@ public class AiTutorServiceImpl implements AiTutorService {
                 .examTip("Write distinct numbered points rather than a continuous paragraph.")
                 .build());
 
-        return list;
+        return prioritizeAndRenumberExam(list, topic);
     }
 
     // -----------------------------------------------------------------------------------------
@@ -1347,7 +1345,7 @@ public class AiTutorServiceImpl implements AiTutorService {
                 .examTip("Structure with clear bold subheadings and boxed concluding formulas.")
                 .build());
 
-        return list;
+        return prioritizeAndRenumberExam(list, topic);
     }
 
     // -----------------------------------------------------------------------------------------
@@ -1394,5 +1392,33 @@ public class AiTutorServiceImpl implements AiTutorService {
                 "Give me a 10-mark model answer outline with marking rubric",
                 "What are the top memory mnemonics for this topic?"
         );
+    }
+
+    private List<McqQuestionDto> prioritizeAndRenumber(List<McqQuestionDto> list, String topic) {
+        if (list == null || list.isEmpty() || topic == null || topic.isBlank()) return list;
+        String[] keywords = topic.toLowerCase().split("[^a-zA-Z0-9]+");
+        list.sort((a, b) -> {
+            long countA = Arrays.stream(keywords).filter(k -> k.length() > 3 && a.getQuestion().toLowerCase().contains(k)).count();
+            long countB = Arrays.stream(keywords).filter(k -> k.length() > 3 && b.getQuestion().toLowerCase().contains(k)).count();
+            return Long.compare(countB, countA);
+        });
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).setId(i + 1);
+        }
+        return list;
+    }
+
+    private List<ExamQuestionDto> prioritizeAndRenumberExam(List<ExamQuestionDto> list, String topic) {
+        if (list == null || list.isEmpty() || topic == null || topic.isBlank()) return list;
+        String[] keywords = topic.toLowerCase().split("[^a-zA-Z0-9]+");
+        list.sort((a, b) -> {
+            long countA = Arrays.stream(keywords).filter(k -> k.length() > 3 && a.getQuestion().toLowerCase().contains(k)).count();
+            long countB = Arrays.stream(keywords).filter(k -> k.length() > 3 && b.getQuestion().toLowerCase().contains(k)).count();
+            return Long.compare(countB, countA);
+        });
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).setId(i + 1);
+        }
+        return list;
     }
 }
