@@ -1,0 +1,52 @@
+package com.school.controller;
+
+import com.school.dto.request.AnnouncementRequest;
+import com.school.dto.response.AnnouncementResponse;
+import com.school.security.CustomUserDetails;
+import com.school.service.AnnouncementService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/announcements")
+@RequiredArgsConstructor
+public class AnnouncementController {
+
+    private final AnnouncementService announcementService;
+
+    @GetMapping
+    public List<AnnouncementResponse> getAll(@AuthenticationPrincipal CustomUserDetails principal) {
+        if (principal == null) {
+            return announcementService.findAll();
+        }
+        String role = principal.getUser().getRole().name();
+        String refId = principal.getUser().getRefId();
+        return announcementService.findVisibleTo(role, refId);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public AnnouncementResponse create(
+            @Valid @RequestBody AnnouncementRequest request) {
+        return announcementService.create(request);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public AnnouncementResponse update(
+            @PathVariable String id,
+            @Valid @RequestBody AnnouncementRequest request) {
+        return announcementService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void delete(@PathVariable String id) {
+        announcementService.delete(id);
+    }
+}

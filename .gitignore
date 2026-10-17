@@ -1,0 +1,35 @@
+# Node
+frontend/node_modules/
+frontend/dist/
+**/node_modules/
+**/dist/
+
+# Java
+backend/target/
+*.class
+
+# Python
+ai-service/__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+
+# Environment
+.env
+
+# Uploaded files
+backend/uploads/
+
+# Debug / temporary files
+*.log
+hs_err_pid*
+replay_pid*
+tmp_*
+debug_*.py
+
+# Archives & Installers
+*.zip
+*.tar.gz
+*.msi
+*.exe
