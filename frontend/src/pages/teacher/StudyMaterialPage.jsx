@@ -38,7 +38,16 @@ export default function StudyMaterialsPage() {
   const [form, setForm] = useState(emptyForm)
   const [file, setFile] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(null) // { text: string, type: 'success' | 'error' }
+
+  // Auto-select valid subject when visibleSubjects updates
+  useEffect(() => {
+    if (visibleSubjects && visibleSubjects.length > 0) {
+      if (!form.subjectId || !visibleSubjects.some((s) => s.id === form.subjectId)) {
+        setForm((prev) => ({ ...prev, subjectId: visibleSubjects[0].id }))
+      }
+    }
+  }, [visibleSubjects, form.subjectId])
 
   // Modals state
   const [aiModalOpen, setAiModalOpen] = useState(false)
@@ -86,7 +95,7 @@ export default function StudyMaterialsPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setIsSubmitting(true)
-    setMessage('')
+    setMessage(null)
     try {
       const formData = new FormData()
       formData.append('classId', classId)
@@ -95,7 +104,7 @@ export default function StudyMaterialsPage() {
       formData.append('type', form.type)
       if (form.type === 'PDF') {
         if (!file) {
-          setMessage('Choose a PDF file first.')
+          setMessage({ text: 'Choose a PDF file first.', type: 'error' })
           setIsSubmitting(false)
           return
         }
@@ -105,13 +114,14 @@ export default function StudyMaterialsPage() {
       }
 
       await studyMaterialService.create(formData)
-      setMessage('Study material posted successfully.')
+      setMessage({ text: 'Study material posted successfully.', type: 'success' })
       setForm({ ...emptyForm, subjectId: form.subjectId })
       setFile(null)
       e.target.reset()
       refetchMaterials()
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Failed to post study material.')
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to post study material.'
+      setMessage({ text: errorMsg, type: 'error' })
     } finally {
       setIsSubmitting(false)
     }
@@ -321,11 +331,21 @@ export default function StudyMaterialsPage() {
                 </div>
               )}
 
-              <div className="sm:col-span-2 flex items-center gap-3">
+              <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
                 <Button type="submit" variant="primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Uploading…' : 'Publish Material'}
                 </Button>
-                {message && <span className="text-sm font-medium text-ink-600">{message}</span>}
+                {message && (
+                  <div
+                    className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold ${
+                      message.type === 'error'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    }`}
+                  >
+                    <span>{message.text}</span>
+                  </div>
+                )}
               </div>
             </form>
 

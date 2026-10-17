@@ -51,9 +51,18 @@ public class StudyMaterialController {
         String role = principal != null && principal.getUser() != null && principal.getUser().getRole() != null
                 ? principal.getUser().getRole().name() : null;
 
-        if (!"ADMIN".equals(role)) {
-            if (!teacherAssignmentService.isTeacherAssignedToClassSubject(principalRef, request.getClassId(), request.getSubjectId())) {
-                throw new org.springframework.security.access.AccessDeniedException("Teacher not assigned to this class/subject");
+        if (!"ADMIN".equals(role) && principalRef != null) {
+            boolean assigned = teacherAssignmentService.isTeacherAssignedToClassSubject(principalRef, request.getClassId(), request.getSubjectId());
+            if (!assigned) {
+                // Allow if teacher teaches anywhere in this class, or teaches this subject
+                List<com.school.dto.response.TeacherAssignmentResponse> classAssigns = teacherAssignmentService.findByClassId(request.getClassId());
+                boolean teachesClass = classAssigns != null && classAssigns.stream().anyMatch(a -> principalRef.equals(a.getTeacherId()));
+                List<com.school.dto.response.TeacherAssignmentResponse> teacherAssigns = teacherAssignmentService.findByTeacherId(principalRef);
+                boolean teachesSubject = teacherAssigns != null && teacherAssigns.stream().anyMatch(a -> request.getSubjectId().equals(a.getSubjectId()));
+
+                if (!teachesClass && !teachesSubject && teacherAssigns != null && !teacherAssigns.isEmpty()) {
+                    throw new IllegalArgumentException("Teacher not assigned to this class or subject.");
+                }
             }
         }
 
@@ -203,9 +212,15 @@ public class StudyMaterialController {
         String role = principal != null && principal.getUser() != null && principal.getUser().getRole() != null
                 ? principal.getUser().getRole().name() : null;
 
-        if (!"ADMIN".equals(role)) {
-            if (!teacherAssignmentService.isTeacherAssignedToClassSubject(principalRef, material.getClassId(), material.getSubjectId())) {
-                throw new org.springframework.security.access.AccessDeniedException("Teacher not assigned to this class/subject");
+        if (!"ADMIN".equals(role) && principalRef != null) {
+            boolean assigned = teacherAssignmentService.isTeacherAssignedToClassSubject(principalRef, material.getClassId(), material.getSubjectId());
+            if (!assigned) {
+                List<com.school.dto.response.TeacherAssignmentResponse> classAssigns = teacherAssignmentService.findByClassId(material.getClassId());
+                boolean teachesClass = classAssigns != null && classAssigns.stream().anyMatch(a -> principalRef.equals(a.getTeacherId()));
+                boolean isAuthor = principalRef.equals(material.getTeacherId());
+                if (!teachesClass && !isAuthor) {
+                    throw new IllegalArgumentException("Not authorized to delete this study material.");
+                }
             }
         }
 
