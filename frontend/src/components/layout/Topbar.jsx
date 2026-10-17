@@ -43,11 +43,20 @@ export default function Topbar() {
         ) : (
           <div className="flex items-center gap-6">
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Welcome back, {user?.name?.split(' ')[0]}
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">
-                Academic Portal • Active Session
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <h1 className="text-base font-bold tracking-tight text-slate-900">
+                  {user?.role === ROLES.STUDENT
+                    ? 'Student Portal'
+                    : user?.role === ROLES.TEACHER
+                    ? 'Faculty Portal'
+                    : user?.role === ROLES.PARENT
+                    ? 'Parent Portal'
+                    : 'Academic Portal'}
+                </h1>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Active Session • SchoolBuddy LMS
               </p>
             </div>
 
