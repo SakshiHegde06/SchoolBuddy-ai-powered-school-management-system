@@ -41,15 +41,22 @@ public class AiTutorServiceImpl implements AiTutorService {
             "english", "literature", "grammar", "poem", "essay", "author", "character", "metaphor", "sentence", "comprehension",
             "computer", "python", "code", "programming", "algorithm", "loop", "function", "array", "database", "sql",
             "mcq", "exam", "question", "answer", "mark", "marks", "test", "quiz", "revision", "syllabus", "concept",
-            "explain", "define", "derive", "differentiate", "calculate", "prove", "describe", "evaluate", "diagram", "rubric"
+            "explain", "define", "derive", "differentiate", "calculate", "prove", "describe", "evaluate", "diagram", "rubric",
+            "acid", "base", "salt", "reaction", "compound", "element", "metal", "periodic", "bonding", "carbon",
+            "respiration", "circulation", "digestion", "tissue", "organ", "plant", "animal", "reproduction", "genetics",
+            "motion", "laws", "newton", "friction", "power", "work", "light", "sound", "wave", "heat", "circuit",
+            "polynomial", "quadratic", "root", "linear", "triangle", "circle", "coordinate", "probability", "statistics",
+            "rule", "law", "theorem", "principle", "hypothesis", "experiment", "lesson", "chapter", "unit", "homework"
     );
 
     // Non-academic / off-topic indicators
     private static final List<String> NON_ACADEMIC_PATTERNS = List.of(
-            "game", "gaming", "fortnite", "pubg", "roblox", "minecraft", "play a game",
-            "movie", "celebrity", "gossip", "dating", "flirt", "boyfriend", "girlfriend",
-            "joke", "tell me a joke", "funny", "meme", "song lyrics", "music video",
-            "hack", "password crack", "bypass", "cheat", "crypto", "bitcoin", "horoscope"
+            "game", "gaming", "fortnite", "pubg", "roblox", "minecraft", "play a game", "gta", "playstation", "xbox", "nintendo",
+            "movie", "celebrity", "gossip", "dating", "flirt", "boyfriend", "girlfriend", "crush", "romance", "love story",
+            "joke", "tell me a joke", "funny", "meme", "song lyrics", "music video", "pop song", "rap", "singer", "actor", "actress",
+            "hack", "password crack", "bypass", "cheat", "crypto", "bitcoin", "horoscope", "astrology", "zodiac", "tarot",
+            "casino", "gambling", "betting", "football score", "cricket match", "ipl score", "nba", "fifa", "fashion brand", "makeup",
+            "instagram", "tiktok", "snapchat", "youtube shorts", "influencer", "netflix", "anime", "manga"
     );
 
     @Override
@@ -99,23 +106,24 @@ public class AiTutorServiceImpl implements AiTutorService {
                 ? request.getSubject()
                 : detectSubjectFromTopicAndText(topic, extractedText);
 
-        // Academic guardrail check
-        if (request.getQuery() != null && !request.getQuery().isBlank()) {
-            if (!isStrictlyAcademic(request.getQuery(), subject, topic)) {
-                return AiTutorResponse.builder()
-                        .mode(mode)
-                        .title(topic)
-                        .subject(subject)
-                        .academic(false)
-                        .guardrailNotice("🔒 Academic Guardrail Active: SchoolBuddy AI Study Tutor is strictly restricted to educational topics, school curriculum, syllabus concepts, and exam preparations. Please ask questions related to your subjects or study materials.")
-                        .chatAnswer("I am your dedicated SchoolBuddy Academic Study Tutor! I can only assist with academic questions, curriculum topics, conceptual doubts, and exam prep (such as MCQs, 5M, and 10M questions). Feel free to ask any doubt about " + subject + " or your study materials!")
-                        .followUpQuestions(List.of(
-                                "Can you explain the key concepts of " + topic + "?",
-                                "Generate practice MCQs on " + topic,
-                                "What are the common 5-mark questions from this chapter?"
-                        ))
-                        .build();
-            }
+        // Academic guardrail check on both topic keywords and chat queries
+        boolean topicAcademic = isStrictlyAcademic(topic, subject, topic);
+        boolean queryAcademic = request.getQuery() == null || request.getQuery().isBlank() || isStrictlyAcademic(request.getQuery(), subject, topic);
+
+        if (!topicAcademic || !queryAcademic) {
+            return AiTutorResponse.builder()
+                    .mode(mode)
+                    .title(topic)
+                    .subject(subject)
+                    .academic(false)
+                    .guardrailNotice("🔒 Academic Guardrail Active: SchoolBuddy AI Study Tutor is strictly restricted to educational curriculum, syllabus concepts, and exam preparations. Requests outside of academic studies (e.g. video games, entertainment, celebrities, jokes, social media, sports scores) are not permitted.")
+                    .chatAnswer("I am your dedicated SchoolBuddy Academic Study Tutor! I only assist with academic curriculum topics, conceptual doubts, formulas, homework, and exam prep (such as MCQs, 5M, and 10M questions). Please enter a school syllabus topic (e.g., Photosynthesis, Quadratic Equations, Newton's Laws, Chemical Reactions).")
+                    .followUpQuestions(List.of(
+                            "Can you explain the key concepts of Photosynthesis?",
+                            "Generate practice MCQs on Quadratic Equations",
+                            "What are the common 5-mark questions in Chemistry?"
+                    ))
+                    .build();
         }
 
         AiTutorResponse.AiTutorResponseBuilder builder = AiTutorResponse.builder()

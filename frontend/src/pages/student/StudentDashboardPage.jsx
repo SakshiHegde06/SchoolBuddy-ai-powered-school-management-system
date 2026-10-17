@@ -320,16 +320,17 @@ export default function StudentDashboardPage() {
     })
   }, [timetable, subjects, teachers])
 
-  // Open AI Study Tutor modal for a given material
-  function handleOpenAiTutor(material = null, tab = 'MCQ') {
-    const targetMaterial =
-      material ||
-      (studyMaterials && studyMaterials.length > 0 ? studyMaterials[0] : null) || {
-        id: 'general-science',
-        title: 'Science Curriculum Study Pack',
-        subjectName: 'Science',
-      }
-    setSelectedMaterialForAi(targetMaterial)
+  // General AI Study Tutor state (purely keyword/topic driven, avoids non-academic questions)
+  const [generalTutorTopic, setGeneralTutorTopic] = useState('')
+
+  // Open General AI Study Tutor (topic-driven, decoupled from any PDF)
+  function handleOpenGeneralTutor(tab = 'MCQ', topicOverride = null) {
+    const topic = topicOverride || generalTutorTopic.trim() || 'Chemical Reactions & Equations'
+    setSelectedMaterialForAi({
+      id: null,
+      title: topic,
+      subjectName: 'Science',
+    })
     setAiTutorInitialTab(tab)
     setAiTutorModalOpen(true)
   }
@@ -380,11 +381,11 @@ export default function StudentDashboardPage() {
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
-            onClick={() => handleOpenAiTutor(null, 'CHAT')}
+            onClick={() => handleOpenGeneralTutor('CHAT')}
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition cursor-pointer"
           >
-            <Sparkles className="h-4 w-4" />
-            <span>Ask AI Tutor</span>
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            <span>General AI Study Tutor</span>
           </button>
           <button
             onClick={() => setIsReportModalOpen(true)}
@@ -509,8 +510,85 @@ export default function StudentDashboardPage() {
       {/* TAB 1: STUDY MATERIALS & AI PRACTICE */}
       {activeWorkspaceTab === 'STUDY' && (
         <div className="space-y-6">
+          {/* ======================================================== */}
+          {/* GENERAL AI STUDY TUTOR STUDIO BANNER                     */}
+          {/* ======================================================== */}
+          <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 p-6 text-white shadow-lg relative overflow-hidden">
+            <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="max-w-xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 border border-indigo-400/30 px-3 py-1 text-xs font-bold text-indigo-200 mb-2.5">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                  <span>General AI Study Tutor • Syllabus & Exam Prep Only</span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-white tracking-tight">
+                  Academic AI Study Tutor
+                </h3>
+                <p className="text-xs text-indigo-200/90 mt-1 leading-relaxed">
+                  Type any subject chapter or syllabus keywords below to generate practice MCQs, 5M & 10M questions, bullet revision notes, or ask doubts. Strictly filtered for academic studies.
+                </p>
+              </div>
+
+              {/* Keyword Input & Action Buttons */}
+              <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <div className="relative min-w-[280px]">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={generalTutorTopic}
+                    onChange={(e) => setGeneralTutorTopic(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleOpenGeneralTutor('MCQ')
+                      }
+                    }}
+                    placeholder="Type keywords (e.g. Photosynthesis, Trigonometry)..."
+                    className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm pl-10 pr-3 py-2.5 text-xs text-white placeholder:text-indigo-200/60 focus:bg-white focus:text-slate-900 focus:placeholder:text-slate-400 focus:outline-none transition-all shadow-inner"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => handleOpenGeneralTutor('MCQ')}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+                    title="Generate practice multiple-choice questions"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Practice MCQs</span>
+                  </button>
+                  <button
+                    onClick={() => handleOpenGeneralTutor('5M')}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+                    title="Generate 5-mark and 10-mark exam questions"
+                  >
+                    <FileQuestion className="h-4 w-4" />
+                    <span>5M / 10M</span>
+                  </button>
+                  <button
+                    onClick={() => handleOpenGeneralTutor('TOPICS')}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+                    title="Generate bullet revision notes"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Notes</span>
+                  </button>
+                  <button
+                    onClick={() => handleOpenGeneralTutor('CHAT')}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 px-3.5 py-2.5 text-xs font-bold text-white transition cursor-pointer"
+                    title="Ask an academic doubt"
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-300" />
+                    <span>Ask Tutor</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Left 2 Cols: Study Materials List */}
+            {/* Left 2 Cols: Study Materials List (Clean PDF Documents) */}
             <div className="lg:col-span-2 space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
@@ -519,7 +597,7 @@ export default function StudentDashboardPage() {
                       Curriculum Study Materials
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Teacher-published PDFs and notes. Click any action to launch the AI Tutor on demand.
+                      Teacher-published syllabus textbooks, chapter notes, and reference files.
                     </p>
                   </div>
 
@@ -572,42 +650,28 @@ export default function StudentDashboardPage() {
                           </p>
                         </div>
 
-                        {/* Front-of-PDF Clean Actions */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => handleOpenAiTutor(mat, 'MCQ')}
-                            className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-xs font-semibold text-white shadow-2xs transition cursor-pointer"
-                            title="Generate MCQs on demand"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            <span>Practice MCQs</span>
-                          </button>
-                          <button
-                            onClick={() => handleOpenAiTutor(mat, '5M')}
-                            className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-800 transition cursor-pointer"
-                            title="Generate 5M/10M Exam Questions on demand"
-                          >
-                            <FileQuestion className="h-3.5 w-3.5 text-sky-600" />
-                            <span>5M / 10M</span>
-                          </button>
-                          <button
-                            onClick={() => handleOpenAiTutor(mat, 'TOPICS')}
-                            className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900 transition cursor-pointer"
-                            title="Generate Key Bullet Notes on demand"
-                          >
-                            <BookOpen className="h-3.5 w-3.5 text-amber-600" />
-                            <span>Notes</span>
-                          </button>
-                          {mat.type === 'PDF' && (
+                        {/* Clean File Download / View Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {mat.type === 'PDF' ? (
                             <button
                               onClick={() => handleDownload(mat)}
                               disabled={downloadingId === mat.id}
-                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 px-3.5 py-2 text-xs font-semibold text-slate-700 transition cursor-pointer disabled:opacity-50"
                               title="Download PDF document"
                             >
                               <Download className="h-3.5 w-3.5 text-slate-500" />
-                              <span>{downloadingId === mat.id ? 'Saving…' : 'PDF'}</span>
+                              <span>{downloadingId === mat.id ? 'Downloading…' : 'Download PDF'}</span>
                             </button>
+                          ) : (
+                            <a
+                              href={mat.externalUrl || '#'}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 transition"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5 text-slate-500" />
+                              <span>Open Resource</span>
+                            </a>
                           )}
                         </div>
                       </div>

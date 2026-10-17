@@ -143,6 +143,23 @@ class AiTutorServiceTest {
     }
 
     @Test
+    void testAcademicGuardrailInterceptsNonAcademicTopicKeywords() {
+        AiTutorRequest request = AiTutorRequest.builder()
+                .mode("MCQ")
+                .topic("Fortnite Season 5 Gaming Cheats")
+                .subject("Science")
+                .build();
+
+        AiTutorResponse response = aiTutorService.getTutorResponse(request);
+
+        assertNotNull(response);
+        assertFalse(response.isAcademic(), "Guardrail should flag non-academic topic keywords");
+        assertNotNull(response.getGuardrailNotice());
+        assertTrue(response.getGuardrailNotice().contains("Guardrail Active"));
+        assertNull(response.getMcqs(), "MCQs should be null/empty for non-academic topic");
+    }
+
+    @Test
     void testAcademicGuardrailAllowsCurriculumDoubts() {
         AiTutorRequest request = AiTutorRequest.builder()
                 .mode("CHAT")

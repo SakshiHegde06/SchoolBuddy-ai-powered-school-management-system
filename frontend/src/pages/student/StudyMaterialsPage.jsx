@@ -259,6 +259,20 @@ export default function StudyMaterialsPage() {
     }
   }
 
+  const [generalTopicInput, setGeneralTopicInput] = useState('')
+
+  // Open General AI Study Tutor (topic-driven, decoupled from any PDF)
+  function handleOpenGeneralTutor(tab = 'MCQ', topicOverride = null) {
+    const topic = topicOverride || generalTopicInput.trim() || 'Chemical Reactions & Equations'
+    setSelectedMaterialForAi({
+      id: null,
+      title: topic,
+      subjectName: 'Science',
+    })
+    setAiTutorInitialTab(tab)
+    setAiTutorModalOpen(true)
+  }
+
   // Open AI Tutor directly to requested tab
   function handleOpenAiTutor(material, tab = 'TOPICS') {
     setSelectedMaterialForAi(material || currentHubMaterial)
@@ -341,159 +355,79 @@ export default function StudyMaterialsPage() {
       </div>
 
       {/* ======================================================== */}
-      {/* ⚡ PROMINENT AI QUIZ & REVISION NOTES GENERATOR HUB ⚡ */}
+      {/* ⚡ GENERAL AI STUDY TUTOR STUDIO BANNER ⚡              */}
       {/* ======================================================== */}
-      <div className="rounded-2xl border-2 border-amber-400/40 bg-gradient-to-r from-amber-50/70 via-white to-amber-50/40 p-5 sm:p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm">
-              <Zap className="h-6 w-6" />
+      <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 border border-indigo-400/30 px-3 py-1 text-xs font-bold text-indigo-200 mb-2.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span>General AI Study Tutor • Syllabus Questions Only</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-lg font-bold text-navy-950">
-                  AI Quiz & Revision Notes Generator
-                </h2>
-                <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300">
-                  ⚡ Live AI Analysis
-                </span>
-              </div>
-              <p className="text-xs text-ink-600">
-                Select any study material to instantly generate interactive practice quizzes, key bullet topics, and 5M/10M exam answers.
-              </p>
-            </div>
+            <h2 className="font-display text-xl font-bold text-white tracking-tight">
+              Academic AI Study Tutor
+            </h2>
+            <p className="text-xs text-indigo-200/90 mt-1 leading-relaxed">
+              Type any syllabus topic or chapter keywords below to generate practice MCQs, 5M & 10M questions, bullet notes, or ask doubts. Strictly filtered for academic studies.
+            </p>
           </div>
 
-          {/* Quick Dropdown Selector for Target Material */}
-          {materials.length > 0 && (
-            <div className="flex items-center gap-2 self-start md:self-auto">
-              <span className="text-xs font-semibold text-navy-900 whitespace-nowrap">
-                Analyze Material:
-              </span>
-              <select
-                value={hubSelectedMaterialId}
-                onChange={(e) => setHubSelectedMaterialId(e.target.value)}
-                className="rounded-lg border border-paper-200 bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 shadow-2xs focus:border-navy-900 focus:outline-none max-w-xs truncate"
+          {/* Keyword Input & Action Buttons */}
+          <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="relative min-w-[280px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={generalTopicInput}
+                onChange={(e) => setGeneralTopicInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleOpenGeneralTutor('MCQ')
+                  }
+                }}
+                placeholder="Type study keywords (e.g. Photosynthesis, Trigonometry)..."
+                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm pl-10 pr-3 py-2.5 text-xs text-white placeholder:text-indigo-200/60 focus:bg-white focus:text-slate-900 focus:placeholder:text-slate-400 focus:outline-none transition-all shadow-inner"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => handleOpenGeneralTutor('MCQ')}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+                title="Generate practice multiple-choice questions"
               >
-                {materials.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.title} {m.subjectName ? `(${m.subjectName})` : ''}
-                  </option>
-                ))}
-              </select>
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Practice MCQs</span>
+              </button>
+              <button
+                onClick={() => handleOpenGeneralTutor('5M')}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+                title="Generate 5-mark and 10-mark exam questions"
+              >
+                <FileQuestion className="h-4 w-4" />
+                <span>5M / 10M</span>
+              </button>
+              <button
+                onClick={() => handleOpenGeneralTutor('TOPICS')}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+                title="Generate bullet revision notes"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>Notes</span>
+              </button>
+              <button
+                onClick={() => handleOpenGeneralTutor('CHAT')}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 px-3.5 py-2.5 text-xs font-bold text-white transition cursor-pointer"
+                title="Ask an academic doubt"
+              >
+                <Sparkles className="h-4 w-4 text-amber-300" />
+                <span>Ask Tutor</span>
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* 4 Quick Generator Launch Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-          {/* Action 1: Practice Quiz */}
-          <button
-            onClick={() => handleOpenAiTutor(currentHubMaterial, 'MCQ')}
-            className="group flex flex-col justify-between rounded-xl border border-emerald-200 bg-white p-4 text-left shadow-2xs hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                  5 MCQs
-                </span>
-              </div>
-              <h3 className="font-display text-sm font-bold text-navy-900 group-hover:text-emerald-700 transition-colors">
-                Practice Quiz (MCQs)
-              </h3>
-              <p className="mt-1 text-xs text-ink-600 leading-relaxed">
-                Test yourself with interactive multiple-choice questions, instant answer feedback & score tracking.
-              </p>
-            </div>
-            <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-emerald-700 group-hover:translate-x-0.5 transition-transform">
-              <span>Start Practice Quiz</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </button>
-
-          {/* Action 2: Bullet Notes */}
-          <button
-            onClick={() => handleOpenAiTutor(currentHubMaterial, 'TOPICS')}
-            className="group flex flex-col justify-between rounded-xl border border-amber-200 bg-white p-4 text-left shadow-2xs hover:border-amber-500 hover:shadow-md transition-all cursor-pointer"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
-                  Bullet Points
-                </span>
-              </div>
-              <h3 className="font-display text-sm font-bold text-navy-900 group-hover:text-amber-700 transition-colors">
-                Key Topics & Notes
-              </h3>
-              <p className="mt-1 text-xs text-ink-600 leading-relaxed">
-                Extract high-yield syllabus topics, core definitions, formulas, and common exam pitfalls.
-              </p>
-            </div>
-            <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-amber-700 group-hover:translate-x-0.5 transition-transform">
-              <span>Generate Notes</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </button>
-
-          {/* Action 3: 5M & 10M Questions */}
-          <button
-            onClick={() => handleOpenAiTutor(currentHubMaterial, '5M')}
-            className="group flex flex-col justify-between rounded-xl border border-indigo-200 bg-white p-4 text-left shadow-2xs hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
-                  <FileQuestion className="h-5 w-5" />
-                </div>
-                <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-800">
-                  5M & 10M
-                </span>
-              </div>
-              <h3 className="font-display text-sm font-bold text-navy-900 group-hover:text-indigo-700 transition-colors">
-                5M & 10M Questions
-              </h3>
-              <p className="mt-1 text-xs text-ink-600 leading-relaxed">
-                Short and long answer exam questions with structured model answers and step-marking rubrics.
-              </p>
-            </div>
-            <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-indigo-700 group-hover:translate-x-0.5 transition-transform">
-              <span>View Exam Q&A</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </button>
-
-          {/* Action 4: Ask AI Study Tutor */}
-          <button
-            onClick={() => handleOpenAiTutor(currentHubMaterial, 'CHAT')}
-            className="group flex flex-col justify-between rounded-xl border border-navy-200 bg-white p-4 text-left shadow-2xs hover:border-navy-900 hover:shadow-md transition-all cursor-pointer"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-navy-100 text-navy-900">
-                  <Sparkles className="h-5 w-5 text-amber-600" />
-                </div>
-                <span className="rounded bg-navy-100 px-1.5 py-0.5 text-[10px] font-bold text-navy-900">
-                  Strict Study
-                </span>
-              </div>
-              <h3 className="font-display text-sm font-bold text-navy-900 group-hover:text-navy-700 transition-colors">
-                Ask AI Study Tutor
-              </h3>
-              <p className="mt-1 text-xs text-ink-600 leading-relaxed">
-                Resolve complex doubts, get memory mnemonics, and explore step-by-step concept explanations.
-              </p>
-            </div>
-            <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-navy-900 group-hover:translate-x-0.5 transition-transform">
-              <span>Open AI Tutor</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </button>
+          </div>
         </div>
       </div>
 
@@ -654,94 +588,35 @@ export default function StudyMaterialsPage() {
                   </div>
                 </div>
 
-                {/* FRONT-OF-PDF QUICK ACTIONS (AI QUIZ & NOTES GENERATOR) */}
-                <div className="mt-5 pt-3.5 border-t border-paper-200/80">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    {/* The AI Quiz & Notes Generator Action Bar */}
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block mb-1.5 flex items-center gap-1">
-                        <Zap className="h-3 w-3 text-amber-600" />
-                        AI Quiz & Notes Generator:
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {/* Primary Quiz Generator button */}
-                        <button
-                          onClick={() => handleOpenAiTutor(material, 'MCQ')}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          <span>Generate Quiz (MCQs)</span>
-                        </button>
+                {/* Direct Read and Download Buttons */}
+                <div className="mt-5 pt-3.5 border-t border-paper-200/80 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => handleView(material)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-paper-200 bg-paper-100 hover:bg-paper-200 px-3 py-1.5 text-xs font-semibold text-navy-900 transition-colors cursor-pointer"
+                  >
+                    <Eye className="h-3.5 w-3.5 text-ink-600" />
+                    <span>{material.type === 'LINK' ? 'Open Link' : 'Read Document'}</span>
+                  </button>
 
-                        {/* Bullet Notes button */}
-                        <button
-                          onClick={() => handleOpenAiTutor(material, 'TOPICS')}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 px-2.5 py-1.5 text-xs font-semibold text-amber-900 transition-colors cursor-pointer"
-                        >
-                          <BookOpen className="h-3.5 w-3.5 text-amber-700" />
-                          <span>Key Notes & Topics</span>
-                        </button>
-
-                        {/* 5M Questions */}
-                        <button
-                          onClick={() => handleOpenAiTutor(material, '5M')}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1.5 text-xs font-semibold text-sky-900 transition-colors cursor-pointer"
-                        >
-                          <FileQuestion className="h-3.5 w-3.5 text-sky-700" />
-                          <span>5M Questions</span>
-                        </button>
-
-                        {/* 10M Questions */}
-                        <button
-                          onClick={() => handleOpenAiTutor(material, '10M')}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1.5 text-xs font-semibold text-indigo-900 transition-colors cursor-pointer"
-                        >
-                          <Award className="h-3.5 w-3.5 text-indigo-700" />
-                          <span>10M Questions</span>
-                        </button>
-
-                        {/* Ask Tutor */}
-                        <button
-                          onClick={() => handleOpenAiTutor(material, 'CHAT')}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-navy-100 hover:bg-navy-200 border border-navy-300 px-2.5 py-1.5 text-xs font-semibold text-navy-900 transition-colors cursor-pointer"
-                        >
-                          <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                          <span>Ask Tutor</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Direct Read and Download Buttons */}
-                    <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-                      <button
-                        onClick={() => handleView(material)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-paper-200 bg-paper-100 hover:bg-paper-200 px-3 py-1.5 text-xs font-semibold text-navy-900 transition-colors cursor-pointer"
-                      >
-                        <Eye className="h-3.5 w-3.5 text-ink-600" />
-                        <span>{material.type === 'LINK' ? 'Open Link' : 'Read Document'}</span>
-                      </button>
-
-                      {material.type === 'PDF' && (
-                        <button
-                          onClick={() => handleDownload(material)}
-                          disabled={isDownloading}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
-                        >
-                          {isDownloading ? (
-                            <>
-                              <Spinner size="xs" />
-                              <span>Downloading…</span>
-                            </>
-                          ) : (
-                            <>
-                              <Download className="h-3.5 w-3.5 text-white" />
-                              <span>Download PDF</span>
-                            </>
-                          )}
-                        </button>
+                  {material.type === 'PDF' && (
+                    <button
+                      onClick={() => handleDownload(material)}
+                      disabled={isDownloading}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+                    >
+                      {isDownloading ? (
+                        <>
+                          <Spinner size="xs" />
+                          <span>Downloading…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3.5 w-3.5 text-white" />
+                          <span>Download PDF</span>
+                        </>
                       )}
-                    </div>
-                  </div>
+                    </button>
+                  )}
                 </div>
               </div>
             )

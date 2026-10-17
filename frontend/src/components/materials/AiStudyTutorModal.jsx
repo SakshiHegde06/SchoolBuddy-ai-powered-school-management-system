@@ -159,7 +159,22 @@ export default function AiStudyTutorModal({
     initChatGreeting(sub, defaultTopic)
   }
 
+  const NON_ACADEMIC_PATTERNS = [
+    'game', 'gaming', 'fortnite', 'pubg', 'roblox', 'minecraft', 'gta',
+    'movie', 'celebrity', 'gossip', 'dating', 'flirt', 'boyfriend', 'girlfriend',
+    'joke', 'funny', 'meme', 'song', 'music video', 'pop song', 'rap',
+    'crypto', 'bitcoin', 'horoscope', 'zodiac', 'betting', 'gambling',
+    'instagram', 'tiktok', 'snapchat', 'youtube shorts', 'influencer'
+  ]
+
+  function isNonAcademic(text) {
+    if (!text) return false
+    const lower = text.toLowerCase()
+    return NON_ACADEMIC_PATTERNS.some((pat) => lower.includes(pat))
+  }
+
   function handleSelectPresetChapter(chap) {
+    setError(null)
     setSelectedTopic(chap)
     setTopicInput(chap)
     resetTutorData()
@@ -169,6 +184,13 @@ export default function AiStudyTutorModal({
   function handleApplyCustomTopic() {
     const trimmed = topicInput.trim()
     if (!trimmed) return
+    if (isNonAcademic(trimmed)) {
+      setError(
+        '🔒 Academic Guardrail Active: SchoolBuddy AI Study Tutor is strictly restricted to educational curriculum, syllabus concepts, and exam preparations. Requests outside of academic studies (e.g. video games, entertainment, celebrities, jokes, social media) are not permitted. Please enter a school syllabus topic.'
+      )
+      return
+    }
+    setError(null)
     setSelectedTopic(trimmed)
     resetTutorData()
     initChatGreeting(selectedSubject, trimmed)
@@ -190,6 +212,13 @@ export default function AiStudyTutorModal({
       setSelectedAnswers({})
     }
 
+    if (isNonAcademic(selectedTopic)) {
+      setError(
+        '🔒 Academic Guardrail Active: SchoolBuddy AI Study Tutor is strictly restricted to educational curriculum, syllabus concepts, and exam preparations. Requests outside of academic studies are not permitted.'
+      )
+      return
+    }
+
     setLoading(true)
     setError(null)
     try {
@@ -204,6 +233,11 @@ export default function AiStudyTutorModal({
         : await studyMaterialService.getAiTutorGeneral(payload)
 
       const data = res.data
+      if (data.academic === false) {
+        setError(data.guardrailNotice || 'Academic Guardrail Active: Please enter a curriculum study topic.')
+        return
+      }
+
       if (mode === 'TOPICS') setTopicsData(data)
       else if (mode === 'MCQ') setMcqData(data)
       else if (mode === '5M') setFiveMData(data)
@@ -235,8 +269,27 @@ export default function AiStudyTutorModal({
     const studentMsg = { role: 'student', text: textToSend }
     setChatMessages((prev) => [...prev, studentMsg])
     if (!customText) setChatInput('')
-    setChatLoading(true)
 
+    if (isNonAcademic(textToSend)) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: 'tutor',
+          text: `I am your dedicated SchoolBuddy Academic Study Tutor! I only assist with academic syllabus questions, conceptual doubts, formulas, homework, and exam preparation. Please ask questions related to your syllabus or study subjects!`,
+          academic: false,
+          guardrailNotice:
+            '🔒 Academic Focus Only: Questions outside of studies (games, movies, gossip, jokes, sports) are strictly avoided.',
+          followUps: [
+            `Explain the core mechanism of ${selectedTopic}`,
+            `Give me 3 memory mnemonics for ${selectedTopic}`,
+            'What are the most common exam traps here?',
+          ],
+        },
+      ])
+      return
+    }
+
+    setChatLoading(true)
     try {
       const payload = {
         mode: 'CHAT',
@@ -496,15 +549,38 @@ export default function AiStudyTutorModal({
           )}
 
           {error && !loading && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center max-w-lg mx-auto">
-              <AlertTriangle className="mx-auto h-8 w-8 text-rose-600 mb-2" />
-              <p className="text-sm font-bold text-rose-800">{error}</p>
-              <button
-                onClick={() => fetchTabData(activeTab, true)}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 transition cursor-pointer"
-              >
-                <RotateCcw className="h-3.5 w-3.5" /> Try Again
-              </button>
+            <div className={`rounded-2xl border p-6 text-center max-w-lg mx-auto ${
+              error.includes('Academic Guardrail') || error.includes('Academic')
+                ? 'border-amber-300 bg-amber-50/90 shadow-sm'
+                : 'border-rose-200 bg-rose-50'
+            }`}>
+              {error.includes('Academic Guardrail') || error.includes('Academic') ? (
+                <ShieldCheck className="mx-auto h-10 w-10 text-amber-600 mb-2" />
+              ) : (
+                <AlertTriangle className="mx-auto h-8 w-8 text-rose-600 mb-2" />
+              )}
+              <h4 className={`text-sm font-bold mb-1 ${
+                error.includes('Academic Guardrail') || error.includes('Academic')
+                  ? 'text-amber-950 font-display'
+                  : 'text-rose-900'
+              }`}>
+                {error.includes('Academic Guardrail') || error.includes('Academic')
+                  ? 'Educational Studies Only'
+                  : 'Question Generation Failed'}
+              </h4>
+              <p className={`text-xs leading-relaxed ${
+                error.includes('Academic Guardrail') || error.includes('Academic')
+                  ? 'text-amber-800'
+                  : 'text-rose-800'
+              }`}>{error}</p>
+              {!(error.includes('Academic Guardrail') || error.includes('Academic')) && (
+                <button
+                  onClick={() => fetchTabData(activeTab, true)}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 transition cursor-pointer"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Try Again
+                </button>
+              )}
             </div>
           )}
 
