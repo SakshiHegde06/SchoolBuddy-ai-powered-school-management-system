@@ -44,14 +44,6 @@ import { timetableService } from '../../services/timetableService'
 import { attendanceService } from '../../services/attendanceService'
 import { homeworkService } from '../../services/homeworkService'
 import { studyMaterialService } from '../../services/studyMaterialService'
-import LmsHeroBanner from '../../components/dashboard/LmsHeroBanner'
-import PopularCoursesWidget from '../../components/dashboard/PopularCoursesWidget'
-import ActivityProgressWidget from '../../components/dashboard/ActivityProgressWidget'
-import BestInstructorsWidget from '../../components/dashboard/BestInstructorsWidget'
-import SchoolPerformanceBarWidget from '../../components/dashboard/SchoolPerformanceBarWidget'
-import OverallPassDonutWidget from '../../components/dashboard/OverallPassDonutWidget'
-import ContentUsageTrendWidget from '../../components/dashboard/ContentUsageTrendWidget'
-import { LayoutDashboard } from 'lucide-react'
 
 export default function StudentDashboardPage() {
   const { user } = useAuth()
@@ -59,8 +51,8 @@ export default function StudentDashboardPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [studentRefId, setStudentRefId] = useState(user?.refId || null)
 
-  // Clean dashboard tab state: 'OVERVIEW' | 'STUDY' | 'GRADES' | 'TIMETABLE' | 'ATTENDANCE'
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('OVERVIEW')
+  // Clean dashboard tab state: 'STUDY' | 'GRADES' | 'TIMETABLE' | 'ATTENDANCE'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('STUDY')
 
   // Search filter for study materials
   const [materialSearch, setMaterialSearch] = useState('')
@@ -188,54 +180,6 @@ export default function StudentDashboardPage() {
 
   const { data: subjects } = useFetch(() => subjectService.list(), [])
   const { data: teachers } = useFetch(() => teacherService.list(), [])
-
-  const studentCourses = useMemo(() => {
-    if (subjects && subjects.length > 0) {
-      const styles = [
-        { bgColor: 'bg-amber-400', tagBg: 'bg-amber-50 text-amber-700 border-amber-200' },
-        { bgColor: 'bg-rose-500', tagBg: 'bg-rose-50 text-rose-700 border-rose-200' },
-        { bgColor: 'bg-teal-500', tagBg: 'bg-teal-50 text-teal-700 border-teal-200' },
-        { bgColor: 'bg-blue-600', tagBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-      ]
-      return subjects.slice(0, 4).map((sub, idx) => {
-        const style = styles[idx % styles.length]
-        return {
-          id: sub.id,
-          title: sub.name,
-          subtext: `${teacherMap[sub.id] ? teacherMap[sub.id] + ' • ' : ''}Active Course`,
-          tag: sub.type || 'Academic',
-          ...style,
-        }
-      })
-    }
-    return [
-      { id: 1, title: 'UI/UX Design', subtext: '24+ Lessons • Active', tag: 'Design', bgColor: 'bg-amber-400', tagBg: 'bg-amber-50 text-amber-700 border-amber-200' },
-      { id: 2, title: 'Marketing', subtext: '18+ Lessons • Active', tag: 'Marketing', bgColor: 'bg-rose-500', tagBg: 'bg-rose-50 text-rose-700 border-rose-200' },
-      { id: 3, title: 'Web Development', subtext: '35+ Lessons • Active', tag: 'Web Dev', bgColor: 'bg-teal-500', tagBg: 'bg-teal-50 text-teal-700 border-teal-200' },
-      { id: 4, title: 'Mathematics', subtext: '42+ Lessons • Active', tag: 'Math', bgColor: 'bg-blue-600', tagBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-    ]
-  }, [subjects, teacherMap])
-
-  const studentTeachers = useMemo(() => {
-    if (teachers && teachers.length > 0) {
-      return teachers.slice(0, 4).map((t, idx) => {
-        const colors = ['border-amber-400', 'border-rose-400', 'border-teal-400', 'border-blue-500']
-        return {
-          id: t.id,
-          name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim() || 'Faculty Teacher',
-          role: t.designation || t.department || 'Subject Faculty',
-          avatar: t.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name || 'T')}&background=0ea5e9&color=fff&bold=true`,
-          color: colors[idx % colors.length],
-        }
-      })
-    }
-    return [
-      { id: 1, name: 'Ali Haider', role: 'Mathematics Lead', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', color: 'border-amber-400' },
-      { id: 2, name: 'Naeem Trump', role: 'Computer Science', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', color: 'border-rose-400' },
-      { id: 3, name: 'Tyler Desk', role: 'Physics & Sciences', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', color: 'border-teal-400' },
-      { id: 4, name: 'Johan Alem', role: 'Language & Arts', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', color: 'border-blue-500' },
-    ]
-  }, [teachers])
 
   // Subject-wise Attendance Breakdown (Rule: Each subject must be >= 75%)
   const subjectAttendanceStats = useMemo(() => {
@@ -414,43 +358,127 @@ export default function StudentDashboardPage() {
   return (
     <div className="space-y-6 pb-12 max-w-7xl mx-auto">
       {/* ======================================================== */}
-      {/* 1. LMS HERO BANNER & QUICK ACTION                        */}
+      {/* 1. CLEAN EXECUTIVE HEADER                                */}
       {/* ======================================================== */}
-      <LmsHeroBanner
-        greetingTitle={`Welcome back, ${user?.name?.split(' ')[0] || 'Learner'}!`}
-        greetingSubtitle="Access your course study materials, launch the 24/7 AI Study Tutor, and monitor your academic progress."
-        badge1={{
-          icon: GraduationCap,
-          label: 'Attendance',
-          value: hasAttendanceShortage ? 'Shortage (<75%)' : '92% Compliant',
-          color: 'pink',
-        }}
-        badge2={{
-          icon: BookOpen,
-          label: 'Enrolled Courses',
-          value: `${subjects?.length || 6} Subjects`,
-          color: 'amber',
-        }}
-        illustrationSrc="/assets/student_banner_illustration.jpg"
-        actionTitle="Need AI Help with Exam Prep?"
-        actionBtnText="⚡ Launch AI Study Tutor"
-        onActionClick={() => handleOpenGeneralTutor('CHAT')}
-        statBox1={{
-          label: 'Exam Average',
-          value: averageMarksPct !== null ? `${averageMarksPct}%` : '88%',
-        }}
-        statBox2={{
-          label: 'Study Packs',
-          value: `${studyMaterials.length}`,
-        }}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 px-3 py-0.5 text-xs font-bold text-indigo-700">
+              <GraduationCap className="h-3.5 w-3.5" />
+              <span>Grade {profile?.grade || 'Curriculum'} • {profile?.section ? `Section ${profile.section}` : 'Active'}</span>
+            </span>
+            <span className="text-xs text-slate-400">
+              Roll #{profile?.rollNumber || '01'}
+            </span>
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Welcome back, {user?.name?.split(' ')[0] || 'Student'}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Access your course study materials, launch the AI Tutor on demand, and monitor your academic progress.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={() => handleOpenGeneralTutor('CHAT')}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            <span>General AI Study Tutor</span>
+          </button>
+          <button
+            onClick={() => setIsReportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 transition cursor-pointer"
+          >
+            <Award className="h-4 w-4 text-amber-500" />
+            <span>Official Transcript</span>
+          </button>
+        </div>
+      </div>
 
       {/* ======================================================== */}
-      {/* 2. SEGMENTED WORKSPACE CONTROLLER                        */}
+      {/* 2. THREE MINIMAL EXECUTIVE KPI CARDS                     */}
+      {/* ======================================================== */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Metric 1: Attendance Compliance */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                Attendance Compliance (≥75%)
+              </p>
+              <h3 className="mt-1.5 text-2xl font-extrabold text-slate-900">
+                {totalSubjectsWithAttendance > 0
+                  ? `${subjectsMeetingRequirement} / ${totalSubjectsWithAttendance} Subjects`
+                  : '100% Compliant'}
+              </h3>
+              <p className="mt-1 text-xs">
+                {hasAttendanceShortage ? (
+                  <span className="font-semibold text-rose-600">
+                    Shortage in 1+ subjects (&lt;75%)
+                  </span>
+                ) : (
+                  <span className="font-semibold text-emerald-600">
+                    Eligible for final examinations
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${hasAttendanceShortage ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+              <ClipboardCheck className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 2: Exam Performance */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                Cumulative Exam Average
+              </p>
+              <h3 className="mt-1.5 text-2xl font-extrabold text-slate-900">
+                {averageMarksPct !== null ? `${averageMarksPct}%` : 'N/A'}
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">
+                {marks?.length
+                  ? `Across ${marks.length} recorded exam(s)`
+                  : 'No graded exams recorded yet'}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <BookOpen className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 3: Curriculum Materials */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                Course Study Packs
+              </p>
+              <h3 className="mt-1.5 text-2xl font-extrabold text-slate-900">
+                {studyMaterials.length} Documents
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">
+                AI practice & bullet notes available
+              </p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Brain className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 3. SEGMENTED WORKSPACE CONTROLLER                        */}
       {/* ======================================================== */}
       <div className="flex border-b border-slate-200 bg-white rounded-2xl p-1.5 shadow-2xs overflow-x-auto scrollbar-none">
         {[
-          { id: 'OVERVIEW', label: 'Dashboard Overview', icon: LayoutDashboard },
           { id: 'STUDY', label: 'Study Materials & AI Practice', icon: BookMarked },
           { id: 'GRADES', label: 'Academic Grades & Performance', icon: Award },
           { id: 'TIMETABLE', label: 'Class Timetable', icon: CalendarDays },
@@ -478,184 +506,6 @@ export default function StudentDashboardPage() {
       {/* ======================================================== */}
       {/* 4. TAB CONTENT PANELS                                    */}
       {/* ======================================================== */}
-
-      {/* TAB 0: DASHBOARD OVERVIEW (REFERENCE LAYOUT) */}
-      {activeWorkspaceTab === 'OVERVIEW' && (
-        <div className="space-y-6">
-          {/* Row 2: Popular Courses | Current Activity | Best Instructors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
-            {/* Enrolled Courses */}
-            <div className="lg:col-span-4 flex">
-              <div className="w-full">
-                <PopularCoursesWidget
-                  title="Enrolled Courses"
-                  viewAllText="All Subjects"
-                  onViewAll={() => setActiveWorkspaceTab('STUDY')}
-                  courses={studentCourses}
-                  onCourseClick={(course) => {
-                    setMaterialSearch(course.title)
-                    setActiveWorkspaceTab('STUDY')
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Current Activity */}
-            <div className="lg:col-span-4 flex">
-              <div className="w-full">
-                <ActivityProgressWidget
-                  title="Study Activity"
-                  chartSubtitle="Monthly Learning Progress"
-                  stat1={{
-                    value: '4500+',
-                    label: 'Study Hours',
-                    bgColor: 'from-amber-400 to-amber-500',
-                    onClick: () => setActiveWorkspaceTab('STUDY'),
-                  }}
-                  stat2={{
-                    value: `${studyMaterials.length * 15}+`,
-                    label: 'AI Questions Solved',
-                    bgColor: 'from-rose-500 to-rose-600',
-                    onClick: () => handleOpenGeneralTutor('MCQ'),
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Faculty Instructors */}
-            <div className="lg:col-span-4 flex">
-              <div className="w-full">
-                <BestInstructorsWidget
-                  title="Subject Instructors"
-                  viewAllText="Class Schedule"
-                  onViewAll={() => setActiveWorkspaceTab('TIMETABLE')}
-                  instructors={studentTeachers}
-                  onChat={() => handleOpenGeneralTutor('CHAT')}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Row 3: Subject Performance | Overall Attendance Donut | AI Usage Trend */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
-            <div className="lg:col-span-5 flex">
-              <div className="w-full">
-                <SchoolPerformanceBarWidget
-                  title="Subject Performance"
-                  data={
-                    subjectAttendanceStats.length > 0
-                      ? subjectAttendanceStats.slice(0, 5).map((s, idx) => ({
-                          name: s.name,
-                          score: s.pct || 80,
-                          color: ['#0ea5e9', '#6366f1', '#14b8a6', '#f43f5e', '#f59e0b'][idx % 5],
-                        }))
-                      : [
-                          { name: 'Mathematics', score: 88, color: '#0ea5e9' },
-                          { name: 'Physics', score: 82, color: '#6366f1' },
-                          { name: 'Chemistry', score: 79, color: '#14b8a6' },
-                          { name: 'English', score: 91, color: '#f43f5e' },
-                          { name: 'Computer Sc', score: 95, color: '#f59e0b' },
-                        ]
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="lg:col-span-4 flex">
-              <div className="w-full">
-                <OverallPassDonutWidget
-                  title="Attendance Compliance"
-                  passRate={
-                    totalSubjectsWithAttendance > 0
-                      ? Math.round((subjectsMeetingRequirement / totalSubjectsWithAttendance) * 100)
-                      : 92
-                  }
-                  failRate={
-                    totalSubjectsWithAttendance > 0
-                      ? 100 - Math.round((subjectsMeetingRequirement / totalSubjectsWithAttendance) * 100)
-                      : 8
-                  }
-                  passLabel="Eligible (≥75%)"
-                  failLabel="Shortage (<75%)"
-                />
-              </div>
-            </div>
-
-            <div className="lg:col-span-3 flex">
-              <div className="w-full">
-                <ContentUsageTrendWidget
-                  title="AI Study Tutor Usage"
-                  trendText="14% higher than last week"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions & Recent Announcements */}
-          <div className="grid gap-6 lg:grid-cols-2 pt-2">
-            <AnnouncementsWidget limit={3} title="Recent School Announcements" />
-
-            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm flex flex-col justify-between">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                  Student Quick Access
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Jump right into your active study resources or view official academic transcripts.
-                </p>
-
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button
-                    onClick={() => setActiveWorkspaceTab('STUDY')}
-                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-100 transition text-left"
-                  >
-                    <BookMarked size={18} className="text-indigo-600" />
-                    <span className="text-xs font-bold text-indigo-950 mt-1">Study Materials</span>
-                    <span className="text-[10px] text-indigo-600 font-medium">Browse syllabus files</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveWorkspaceTab('GRADES')}
-                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border border-amber-100 transition text-left"
-                  >
-                    <Award size={18} className="text-amber-600" />
-                    <span className="text-xs font-bold text-amber-950 mt-1">Grades & Marks</span>
-                    <span className="text-[10px] text-amber-600 font-medium">Exam report cards</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveWorkspaceTab('TIMETABLE')}
-                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-teal-50/70 hover:bg-teal-100/70 border border-teal-100 transition text-left"
-                  >
-                    <CalendarDays size={18} className="text-teal-600" />
-                    <span className="text-xs font-bold text-teal-950 mt-1">Class Timetable</span>
-                    <span className="text-[10px] text-teal-600 font-medium">Daily period slots</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveWorkspaceTab('ATTENDANCE')}
-                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-rose-50/70 hover:bg-rose-100/70 border border-rose-100 transition text-left"
-                  >
-                    <ClipboardCheck size={18} className="text-rose-600" />
-                    <span className="text-xs font-bold text-rose-950 mt-1">Attendance</span>
-                    <span className="text-[10px] text-rose-600 font-medium">Monthly subject logs</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium">Roll #{profile?.rollNumber || '01'} • Grade {profile?.grade || 'Curriculum'}</span>
-                <button
-                  onClick={() => setIsReportModalOpen(true)}
-                  className="font-bold text-blue-600 hover:text-blue-700 hover:underline"
-                >
-                  Download Transcript →
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* TAB 1: STUDY MATERIALS & AI PRACTICE */}
       {activeWorkspaceTab === 'STUDY' && (

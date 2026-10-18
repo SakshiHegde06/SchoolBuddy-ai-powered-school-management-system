@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { Award, CheckCircle, AlertTriangle, BookOpen, Calendar, CheckCircle2 } from 'lucide-react'
 
 function computeGrade(pct) {
@@ -14,7 +14,6 @@ function computeGrade(pct) {
 
 export default function SubjectDeck({ marks, subjects, teacherMap = {}, attendance = [], onOpenTranscript }) {
   const [activeView, setActiveView] = useState('table') // 'table' | 'chart'
-  const [chartMetric, setChartMetric] = useState('marks') // 'marks' | 'percentage'
 
   const allSubjects = useMemo(() => {
     const list = [...(subjects || [])]
@@ -100,29 +99,12 @@ export default function SubjectDeck({ marks, subjects, teacherMap = {}, attendan
     .sort((a, b) => (a.date > b.date ? 1 : -1))
     .map((m) => {
       const typeStr = m.type ? `${m.type.charAt(0)}${m.type.slice(1).toLowerCase()}` : 'Exam'
-      const marksObtained = Number(m.marksObtained ?? 0)
-      const maxMarks = Number(m.maxMarks ?? 0)
-      const pct = maxMarks > 0 ? Math.round((marksObtained / maxMarks) * 100) : 0
       return {
         label: `${m.term || 'Exam'} · ${typeStr}`,
-        marksObtained,
-        maxMarks,
-        marksScoreText: `${marksObtained} / ${maxMarks}`,
-        pct,
-        grade: computeGrade(pct),
-        date: m.date,
+        pct: m.maxMarks > 0 ? Math.round((m.marksObtained / m.maxMarks) * 100) : 0,
+        score: `${m.marksObtained}/${m.maxMarks}`,
       }
     })
-
-  const maxPossibleMarks = useMemo(() => {
-    if (!chartData || chartData.length === 0) return 25
-    const highest = Math.max(...chartData.map((d) => d.maxMarks || 0), 20)
-    if (highest <= 20) return 20
-    if (highest <= 25) return 25
-    if (highest <= 50) return 50
-    if (highest <= 100) return 100
-    return Math.ceil(highest / 10) * 10
-  }, [chartData])
 
   // Flat list of all published mark entries across all subjects
   const allMarkEntries = useMemo(() => {
@@ -333,162 +315,36 @@ export default function SubjectDeck({ marks, subjects, teacherMap = {}, attendan
 
       {/* 2. Visual Bar Chart View */}
       {activeView === 'chart' && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           {selected && chartData.length > 0 ? (
             <div>
-              {/* Header with Title, Mode Toggle, Attendance Badge */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-base font-bold text-slate-900 font-display">
-                      {selected.name} — Exam Marks Progression
-                    </h4>
-                    <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-700">
-                      {chartData.length} Assessment{chartData.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {chartMetric === 'marks'
-                      ? 'Displaying actual marks scored out of maximum possible marks.'
-                      : 'Displaying normalized percentage scores (0% to 100%).'}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Mode Selector: Marks (Default) vs Percentage */}
-                  <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200/80">
-                    <button
-                      type="button"
-                      onClick={() => setChartMetric('marks')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                        chartMetric === 'marks'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      🎯 Marks Scored
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setChartMetric('percentage')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                        chartMetric === 'percentage'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      📈 Percentage (%)
-                    </button>
-                  </div>
-
-                  {selected.attPct !== null && (
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-xl font-bold border ${
-                        selected.isAttEligible
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
-                    >
-                      Att: {selected.attPct}% ({selected.isAttEligible ? 'Eligible' : 'Shortage'})
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Chart Canvas */}
-              <div style={{ width: '100%', height: 280 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    margin={{ top: 25, right: 25, left: -10, bottom: 5 }}
-                    barGap={8}
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-bold text-slate-800">
+                  {selected.name} — Exam Scores Progression
+                </h4>
+                {selected.attPct !== null && (
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                      selected.isAttEligible ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}
                   >
+                    Subject Attendance: {selected.attPct}% ({selected.isAttEligible ? 'Eligible ≥75%' : 'Shortage <75%'})
+                  </span>
+                )}
+              </div>
+              <div style={{ width: '100%', height: 260 }}>
+                <ResponsiveContainer>
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 11, fill: '#64748B', fontWeight: 600 }}
-                      axisLine={{ stroke: '#E2E8F0' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      domain={chartMetric === 'marks' ? [0, maxPossibleMarks] : [0, 100]}
-                      tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
-                      axisLine={false}
-                      tickLine={false}
-                      unit={chartMetric === 'marks' ? '' : '%'}
-                      allowDecimals={false}
-                    />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748B' }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748B' }} />
                     <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const d = payload[0].payload
-                          return (
-                            <div className="rounded-2xl border border-slate-800 bg-slate-900 text-white p-3.5 shadow-xl text-xs space-y-1.5 min-w-[180px]">
-                              <p className="font-bold text-slate-300 text-xs border-b border-slate-800 pb-1">
-                                {d.label}
-                              </p>
-                              <div className="pt-0.5">
-                                <p className="text-blue-400 font-extrabold text-sm">
-                                  Marks Scored: {d.marksObtained} / {d.maxMarks}
-                                </p>
-                                <p className="text-slate-300 font-medium">
-                                  Percentage: {d.pct}% • Grade {d.grade}
-                                </p>
-                                {d.date && (
-                                  <p className="text-slate-400 text-[10px] mt-1">
-                                    Date: {new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        }
-                        return null
-                      }}
+                      formatter={(value, name, props) => [`${props.payload.pct}% (${props.payload.score})`, 'Score']}
+                      contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E2E8F0' }}
                     />
-                    {/* The Bar: Fixed width (barSize={44}), rounded top corners, never stretches */}
-                    <Bar
-                      dataKey={chartMetric === 'marks' ? 'marksObtained' : 'pct'}
-                      fill="#2563EB"
-                      barSize={44}
-                      radius={[8, 8, 0, 0]}
-                    >
-                      {/* Bold Label directly on top of the bar showing actual marks (e.g. 20 / 20) */}
-                      <LabelList
-                        dataKey={chartMetric === 'marks' ? 'marksScoreText' : 'pct'}
-                        position="top"
-                        offset={8}
-                        fill="#0F172A"
-                        fontSize={12}
-                        fontWeight={700}
-                        formatter={(val) => (chartMetric === 'marks' ? val : `${val}%`)}
-                      />
-                    </Bar>
+                    <Bar dataKey="pct" fill="#3B82F6" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-
-              {/* Bottom Legend & Summary Pill */}
-              <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-100 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-md bg-blue-600" />
-                  <span className="font-semibold text-slate-700">
-                    {chartMetric === 'marks' ? 'Marks Scored (Out of Total Marks)' : 'Percentage Score (%)'}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {chartData.map((d, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-bold"
-                    >
-                      <span>{d.label.split('·')[0].trim()}:</span>
-                      <span className="text-blue-700 font-extrabold">{d.marksScoreText}</span>
-                      <span className="text-blue-500 font-medium">({d.pct}%)</span>
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           ) : (

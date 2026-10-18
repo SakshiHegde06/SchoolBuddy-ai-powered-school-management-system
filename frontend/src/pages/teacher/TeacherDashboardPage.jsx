@@ -20,13 +20,6 @@ import { teacherService } from '../../services/teacherService'
 import { teacherAssignmentService } from '../../services/teacherAssignmentService'
 import { timetableService } from '../../services/timetableService'
 import ClassTimetableWidget from '../../components/ClassTimetableWidget'
-import LmsHeroBanner from '../../components/dashboard/LmsHeroBanner'
-import PopularCoursesWidget from '../../components/dashboard/PopularCoursesWidget'
-import ActivityProgressWidget from '../../components/dashboard/ActivityProgressWidget'
-import BestInstructorsWidget from '../../components/dashboard/BestInstructorsWidget'
-import SchoolPerformanceBarWidget from '../../components/dashboard/SchoolPerformanceBarWidget'
-import OverallPassDonutWidget from '../../components/dashboard/OverallPassDonutWidget'
-import ContentUsageTrendWidget from '../../components/dashboard/ContentUsageTrendWidget'
 
 export default function TeacherDashboardPage() {
   const navigate = useNavigate()
@@ -78,54 +71,6 @@ export default function TeacherDashboardPage() {
 
   const { data: subjects } = useFetch(() => subjectService.list(), [])
   const { data: teachers, isLoading: teachersLoading } = useFetch(() => teacherService.list(), [])
-
-  const teacherCourses = useMemo(() => {
-    if (assignments && assignments.length > 0) {
-      const styles = [
-        { bgColor: 'bg-amber-400', tagBg: 'bg-amber-50 text-amber-700 border-amber-200' },
-        { bgColor: 'bg-rose-500', tagBg: 'bg-rose-50 text-rose-700 border-rose-200' },
-        { bgColor: 'bg-teal-500', tagBg: 'bg-teal-50 text-teal-700 border-teal-200' },
-        { bgColor: 'bg-blue-600', tagBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-      ]
-      return assignments.slice(0, 4).map((a, idx) => {
-        const style = styles[idx % styles.length]
-        return {
-          id: a.id || idx,
-          title: a.subjectName || subjectName(a.subjectId) || 'Assigned Subject',
-          subtext: `${a.className || 'Class Section'} • Active`,
-          tag: 'Assigned',
-          ...style,
-        }
-      })
-    }
-    return [
-      { id: 1, title: 'Higher Mathematics', subtext: 'Grade 10A • In Session', tag: 'Period 1', bgColor: 'bg-blue-600', tagBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-      { id: 2, title: 'Physics & Lab', subtext: 'Grade 10B • In Session', tag: 'Period 3', bgColor: 'bg-amber-400', tagBg: 'bg-amber-50 text-amber-700 border-amber-200' },
-      { id: 3, title: 'Computer Science', subtext: 'Grade 9A • In Session', tag: 'Period 4', bgColor: 'bg-teal-500', tagBg: 'bg-teal-50 text-teal-700 border-teal-200' },
-      { id: 4, title: 'Applied Mathematics', subtext: 'Grade 9B • In Session', tag: 'Period 6', bgColor: 'bg-rose-500', tagBg: 'bg-rose-50 text-rose-700 border-rose-200' },
-    ]
-  }, [assignments, subjects])
-
-  const facultyPeers = useMemo(() => {
-    if (teachers && teachers.length > 0) {
-      return teachers.slice(0, 4).map((t, idx) => {
-        const colors = ['border-amber-400', 'border-rose-400', 'border-teal-400', 'border-blue-500']
-        return {
-          id: t.id,
-          name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim() || 'Teacher',
-          role: t.designation || t.department || 'Faculty Colleague',
-          avatar: t.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name || 'T')}&background=0ea5e9&color=fff&bold=true`,
-          color: colors[idx % colors.length],
-        }
-      })
-    }
-    return [
-      { id: 1, name: 'Ali Haider', role: 'Mathematics Lead', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', color: 'border-amber-400' },
-      { id: 2, name: 'Naeem Trump', role: 'Computer Science Faculty', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', color: 'border-rose-400' },
-      { id: 3, name: 'Tyler Desk', role: 'Physical Sciences Head', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', color: 'border-teal-400' },
-      { id: 4, name: 'Johan Alem', role: 'Languages & Arts', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', color: 'border-blue-500' },
-    ]
-  }, [teachers])
 
   const subjectName = (idOrName) => {
     if (!idOrName) return 'Free'
@@ -272,119 +217,41 @@ export default function TeacherDashboardPage() {
   return (
     <div className="space-y-8">
 
-      {/* Row 1: LMS Hero Banner & Quick Actions */}
-      <LmsHeroBanner
-        greetingTitle="Empower & Guide Your Students!"
-        greetingSubtitle="Manage your classrooms, publish syllabus notes, track daily attendances, and evaluate academic marks."
-        badge1={{
-          icon: GraduationCap,
-          label: 'Assigned Classes',
-          value: `${assignedClassIds?.length || 3} Classes`,
-          color: 'pink',
-        }}
-        badge2={{
-          icon: BookOpen,
-          label: 'Weekly Periods',
-          value: '36+ Slots',
-          color: 'amber',
-        }}
-        illustrationSrc="/assets/student_banner_illustration.jpg"
-        actionTitle="Classroom Quick Action"
-        actionBtnText="+ Take Today's Attendance"
-        onActionClick={() => navigate('/teacher/attendance')}
-        statBox1={{
-          label: 'Assigned Subjects',
-          value: `${assignments?.length || 4}`,
-        }}
-        statBox2={{
-          label: 'Pending Evaluations',
-          value: '6',
-        }}
-      />
+      {/* Executive Faculty Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-7 sm:p-8 text-white shadow-xl border border-slate-800">
+        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute right-1/4 -bottom-20 h-56 w-56 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
 
-      {/* Row 2: Assigned Subjects | Teaching Activity | Faculty Peers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
-        <div className="lg:col-span-4 flex">
-          <div className="w-full">
-            <PopularCoursesWidget
-              title="Assigned Subjects"
-              viewAllText="Study Materials"
-              onViewAll={() => navigate('/teacher/materials')}
-              courses={teacherCourses}
-              onCourseClick={() => navigate('/teacher/materials')}
-            />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 px-3.5 py-1 text-xs font-semibold text-indigo-300 mb-3 border border-indigo-400/30">
+              <GraduationCap className="h-4 w-4 text-indigo-400" />
+              <span>Faculty Workspace • {assignedClassIds?.length || 0} Assigned Classes</span>
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+              Welcome back, {user?.name || 'Teacher'}
+            </h1>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Manage your classrooms, publish syllabus notes with live AI previews,
+              track subject attendance, and evaluate academic marks from one consolidated workspace.
+            </p>
           </div>
-        </div>
 
-        <div className="lg:col-span-4 flex">
-          <div className="w-full">
-            <ActivityProgressWidget
-              title="Teaching Activity"
-              chartSubtitle="Monthly Lecture Delivery"
-              stat1={{
-                value: '340+',
-                label: 'Lectures Given',
-                bgColor: 'from-amber-400 to-amber-500',
-                onClick: () => navigate('/teacher/attendance'),
-              }}
-              stat2={{
-                value: '98%',
-                label: 'Attendance Marked',
-                bgColor: 'from-rose-500 to-rose-600',
-                onClick: () => navigate('/teacher/attendance'),
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 flex">
-          <div className="w-full">
-            <BestInstructorsWidget
-              title="Faculty Peers"
-              viewAllText="All Faculty"
-              onViewAll={() => {}}
-              instructors={facultyPeers}
-              onChat={() => {}}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Class Performance | Attendance Rate Donut | Submissions Trend */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
-        <div className="lg:col-span-5 flex">
-          <div className="w-full">
-            <SchoolPerformanceBarWidget
-              title="Class Average Performance"
-              data={[
-                { name: 'Grade 10A', score: 89, color: '#0ea5e9' },
-                { name: 'Grade 10B', score: 84, color: '#6366f1' },
-                { name: 'Grade 9A', score: 76, color: '#14b8a6' },
-                { name: 'Grade 9B', score: 72, color: '#f43f5e' },
-                { name: 'Grade 8A', score: 68, color: '#f59e0b' },
-              ]}
-            />
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 flex">
-          <div className="w-full">
-            <OverallPassDonutWidget
-              title="Class Attendance Rate"
-              passRate={91}
-              failRate={9}
-              passLabel="Present"
-              failLabel="Absent"
-            />
-          </div>
-        </div>
-
-        <div className="lg:col-span-3 flex">
-          <div className="w-full">
-            <ContentUsageTrendWidget
-              title="Homework Submissions"
-              trendText="6.8% higher than last week"
-            />
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => navigate('/teacher/materials')}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+            >
+              <FileText className="h-4 w-4 text-amber-300" />
+              <span>Study Materials Studio</span>
+            </button>
+            <button
+              onClick={() => navigate('/teacher/attendance')}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm backdrop-blur-md transition cursor-pointer"
+            >
+              <ClipboardCheck className="h-4 w-4 text-emerald-400" />
+              <span>Take Attendance</span>
+            </button>
           </div>
         </div>
       </div>
