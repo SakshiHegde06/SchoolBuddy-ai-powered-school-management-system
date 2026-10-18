@@ -265,12 +265,7 @@ export default function StudyMaterialsPage() {
   // Open General AI Study Tutor directly to chat mode with student's question
   function handleOpenGeneralTutor(inputOverride = null) {
     const raw = (inputOverride !== null ? inputOverride : generalTopicInput).trim()
-    const topic = raw || 'Science & Mathematics'
-    setSelectedMaterialForAi({
-      id: null,
-      title: topic,
-      subjectName: 'Science',
-    })
+    setSelectedMaterialForAi(null)
     setAiTutorInitialTab('CHAT')
     setAiTutorInitialQuestion(raw)
     setAiTutorModalOpen(true)

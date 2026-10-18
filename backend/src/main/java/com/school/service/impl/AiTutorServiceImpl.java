@@ -1361,44 +1361,72 @@ public class AiTutorServiceImpl implements AiTutorService {
     // -----------------------------------------------------------------------------------------
     private String generateChatAnswer(String query, String topic, String subject, String domain, String extractedText) {
         if (query == null || query.isBlank()) {
-            return "Hello! I am your SchoolBuddy AI Study Tutor for **" + topic + "** (" + subject + ").\n\n"
-                    + "Ask me any conceptual doubt, formula derivation, or exam question, and I'll explain it clearly step-by-step!";
+            return "Hello! I am your SchoolBuddy Academic AI Tutor.\n\n"
+                    + "Ask me any question on any academic subject, syllabus concept, or homework problem, and I'll explain it clearly step-by-step!";
         }
 
         String qLower = query.toLowerCase();
+        String detectedSub = detectSubjectFromTopicAndText(query + " " + (topic != null ? topic : ""), extractedText);
 
-        if (qLower.contains("explain") || qLower.contains("what is") || qLower.contains("concept") || qLower.contains("how")) {
-            return "### 📘 Academic Explanation: " + topic + " (" + subject + ")\n\n"
-                    + "Here is the step-by-step academic explanation:\n\n"
-                    + "1. **Core Principle**: In " + subject + ", **" + topic + "** represents the fundamental governing relationship between curriculum variables.\n"
-                    + "2. **Key Mathematical / Physical Relation**: Always state the standard governing formula before beginning substitutions.\n"
-                    + "3. **Exam Expectation**: In examinations, examiners look for: (i) precise textbook definition, (ii) standard SI units, (iii) intermediate calculation steps, and (iv) clean diagrams.\n\n"
-                    + "💡 **Pro Tip**: Would you like to generate practice MCQs or view a full 5-mark model answer on this topic?";
+        if (qLower.contains("solve") || qLower.contains("equation") || qLower.contains("calculate") || qLower.contains("math") || qLower.contains("roots") || qLower.contains("formula")) {
+            return "### 📐 Academic Solution & Step-by-Step Calculation\n\n"
+                    + "Regarding your question: *\"" + query + "\"*\n\n"
+                    + "1. **Identify the Given Data & Goal**:\n"
+                    + "   - Extract all known coefficients, constants, and variables.\n"
+                    + "   - State the target variable or property to determine.\n\n"
+                    + "2. **Apply the Governing Mathematical Theorem / Formula**:\n"
+                    + "   - Identify the standard curriculum identity applicable to this problem.\n"
+                    + "   - Formulate the relation clearly before numerical substitution.\n\n"
+                    + "3. **Step-by-Step Algebraic / Numerical Execution**:\n"
+                    + "   - Substitute the known values with correct signs.\n"
+                    + "   - Simplify intermediate expressions sequentially.\n"
+                    + "   - Isolate the unknown variable.\n\n"
+                    + "4. **Verification & Concluding Statement**:\n"
+                    + "   - Check the solution by substituting back into the original relation.\n"
+                    + "   - State the final numerical answer with appropriate units.\n\n"
+                    + "💡 **Study Tip**: Always write out each intermediate algebraic step in exams to secure full step marks.";
+        }
+
+        if (qLower.contains("explain") || qLower.contains("what is") || qLower.contains("concept") || qLower.contains("how") || qLower.contains("why")) {
+            return "### 📘 Academic Explanation & Key Concepts\n\n"
+                    + "Regarding your question: *\"" + query + "\"*\n\n"
+                    + "1. **Core Definition & Principle**:\n"
+                    + "   - In " + detectedSub + ", this topic represents a fundamental curriculum concept governing natural or logical behavior.\n"
+                    + "   - It follows strict conservation laws, standard definitions, and scientific principles.\n\n"
+                    + "2. **Step-by-Step Mechanism / Process**:\n"
+                    + "   - **Phase 1 (Origin/Initiation)**: The initial conditions and trigger factors.\n"
+                    + "   - **Phase 2 (Interaction/Reaction)**: The primary working mechanism and interactions.\n"
+                    + "   - **Phase 3 (Outcome/Result)**: The final product, state, or conclusion.\n\n"
+                    + "3. **Key Real-World Example / Application**:\n"
+                    + "   - This phenomenon is observed directly in everyday applications and laboratory experiments.\n\n"
+                    + "4. **Exam Essentials**:\n"
+                    + "   - Examiners look for: (i) precise scientific terminology, (ii) labeled diagram or formula, and (iii) correct units and boundary conditions.";
         }
 
         if (qLower.contains("mnemonic") || qLower.contains("remember") || qLower.contains("memory") || qLower.contains("trick")) {
-            return "### 🧠 Memory Mnemonics & Study Shortcuts for " + topic + "\n\n"
+            return "### 🧠 Memory Mnemonics & Study Shortcuts\n\n"
                     + "Here are three proven memorization techniques for exams:\n\n"
-                    + "1. **The Acronym Technique**: Memorize the first letters of each core step or formula component.\n"
-                    + "2. **Cause & Effect Association**: Link " + topic + " to its primary cause, central formula, and final outcome.\n"
-                    + "3. **Visual Anchor**: Picture the standard diagram in your mind before writing your answer.\n\n"
-                    + "Would you like me to test you with a quick multiple-choice question to verify your recall?";
+                    + "1. **The Acronym Technique**: Take the first letter of each key component or step to form a memorable word.\n"
+                    + "2. **Cause & Effect Association**: Link each concept to its primary cause, central formula, and final outcome.\n"
+                    + "3. **Visual Anchor**: Picture the standard labeled diagram in your mind before answering questions in the exam.\n\n"
+                    + "Feel free to ask for a specific mnemonic for any formula or sequence!";
         }
 
-        return "### 🎓 SchoolBuddy Academic Tutor: " + topic + " (" + subject + ")\n\n"
+        return "### 🎓 SchoolBuddy Academic Tutor Answer\n\n"
                 + "Regarding your question: *\"" + query + "\"*\n\n"
-                + "In " + subject + ", this concept is governed by standard syllabus rules and conservation principles.\n"
-                + "- **Key Formula**: Keep the primary governing identity in mind.\n"
-                + "- **Exam Rubric**: Show intermediate steps and label all final units.\n\n"
-                + "Feel free to ask more questions or explore practice MCQs and revision notes!";
+                + "In " + detectedSub + ", this concept is governed by standard syllabus rules and academic principles.\n\n"
+                + "- **Key Concept**: Focus on the foundational definition and fundamental mechanism.\n"
+                + "- **Formulas / Laws**: Always write the primary governing equation first.\n"
+                + "- **Exam Presentation**: Show step-by-step reasoning and verify all units.\n\n"
+                + "Ask any follow-up question or another academic problem whenever you like!";
     }
 
     private List<String> generateFollowUps(String topic, String subject) {
         return List.of(
-                "Can you explain the core concepts of " + topic + "?",
-                "Give me 3 memory mnemonics for " + topic,
+                "Can you explain this step-by-step with an example?",
+                "Give me 3 memory mnemonics for this topic",
                 "What are the most common exam questions and pitfalls?",
-                "Generate practice MCQs on " + topic
+                "How do I solve problem questions on this in exams?"
         );
     }
 
