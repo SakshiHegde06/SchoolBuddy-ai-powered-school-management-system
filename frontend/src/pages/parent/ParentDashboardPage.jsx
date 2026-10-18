@@ -21,6 +21,14 @@ import SubjectDeck from '../../components/marks/SubjectDeck'
 import StudentAttendanceLogbook from '../../components/attendance/StudentAttendanceLogbook'
 import AiPerformanceAnalysis from '../../components/performance/AiPerformanceAnalysis'
 import ReportCardModal from '../../components/reports/ReportCardModal'
+import LmsHeroBanner from '../../components/dashboard/LmsHeroBanner'
+import PopularCoursesWidget from '../../components/dashboard/PopularCoursesWidget'
+import ActivityProgressWidget from '../../components/dashboard/ActivityProgressWidget'
+import BestInstructorsWidget from '../../components/dashboard/BestInstructorsWidget'
+import SchoolPerformanceBarWidget from '../../components/dashboard/SchoolPerformanceBarWidget'
+import OverallPassDonutWidget from '../../components/dashboard/OverallPassDonutWidget'
+import ContentUsageTrendWidget from '../../components/dashboard/ContentUsageTrendWidget'
+import { LayoutDashboard } from 'lucide-react'
 
 import { useAuth } from '../../hooks/useAuth'
 import { useFetch } from '../../hooks/useFetch'
@@ -33,12 +41,13 @@ import { subjectService } from '../../services/subjectService'
 import { remarkService } from '../../services/remarkService'
 import { teacherAssignmentService } from '../../services/teacherAssignmentService'
 import { homeworkService } from '../../services/homeworkService'
+import { teacherService } from '../../services/teacherService'
 
 export default function ParentDashboardPage() {
   const { user } = useAuth()
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [parentId, setParentId] = useState(user?.refId || null)
-  const [activeTab, setActiveTab] = useState('ACADEMICS')
+  const [activeTab, setActiveTab] = useState('OVERVIEW')
 
   // Auto-resolve parent ID if missing on user object
   useEffect(() => {
@@ -137,6 +146,55 @@ export default function ParentDashboardPage() {
   )
 
   const { data: subjects } = useFetch(() => subjectService.list(), [])
+  const { data: teachers } = useFetch(() => teacherService.list(), [])
+
+  const childCourses = useMemo(() => {
+    if (subjects && subjects.length > 0) {
+      const styles = [
+        { bgColor: 'bg-amber-400', tagBg: 'bg-amber-50 text-amber-700 border-amber-200' },
+        { bgColor: 'bg-rose-500', tagBg: 'bg-rose-50 text-rose-700 border-rose-200' },
+        { bgColor: 'bg-teal-500', tagBg: 'bg-teal-50 text-teal-700 border-teal-200' },
+        { bgColor: 'bg-blue-600', tagBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+      ]
+      return subjects.slice(0, 4).map((sub, idx) => {
+        const style = styles[idx % styles.length]
+        return {
+          id: sub.id,
+          title: sub.name,
+          subtext: `${teacherMap[sub.id] ? teacherMap[sub.id] + ' • ' : ''}Curriculum Active`,
+          tag: sub.type || 'Academic',
+          ...style,
+        }
+      })
+    }
+    return [
+      { id: 1, title: 'Mathematics', subtext: 'Curriculum Active', tag: 'Core', bgColor: 'bg-blue-600', tagBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+      { id: 2, title: 'Science & Physics', subtext: 'Theory & Practical', tag: 'Science', bgColor: 'bg-amber-400', tagBg: 'bg-amber-50 text-amber-700 border-amber-200' },
+      { id: 3, title: 'English Literature', subtext: 'Language Arts', tag: 'Language', bgColor: 'bg-rose-500', tagBg: 'bg-rose-50 text-rose-700 border-rose-200' },
+      { id: 4, title: 'Social Studies', subtext: 'History & Civics', tag: 'Social', bgColor: 'bg-teal-500', tagBg: 'bg-teal-50 text-teal-700 border-teal-200' },
+    ]
+  }, [subjects, teacherMap])
+
+  const childTeachers = useMemo(() => {
+    if (teachers && teachers.length > 0) {
+      return teachers.slice(0, 4).map((t, idx) => {
+        const colors = ['border-amber-400', 'border-rose-400', 'border-teal-400', 'border-blue-500']
+        return {
+          id: t.id,
+          name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim() || 'Teacher',
+          role: t.designation || t.department || 'Subject Teacher',
+          avatar: t.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name || 'T')}&background=0ea5e9&color=fff&bold=true`,
+          color: colors[idx % colors.length],
+        }
+      })
+    }
+    return [
+      { id: 1, name: 'Ali Haider', role: 'Mathematics Lead', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', color: 'border-amber-400' },
+      { id: 2, name: 'Naeem Trump', role: 'Computer Science Faculty', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', color: 'border-rose-400' },
+      { id: 3, name: 'Tyler Desk', role: 'Physics & Sciences Lead', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', color: 'border-teal-400' },
+      { id: 4, name: 'Johan Alem', role: 'Language & Arts', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', color: 'border-blue-500' },
+    ]
+  }, [teachers])
 
   const { data: homeworkList, isLoading: homeworkLoading } = useFetch(
     () =>
@@ -171,6 +229,7 @@ export default function ParentDashboardPage() {
   }
 
   const PARENT_TABS = [
+    { id: 'OVERVIEW', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'ACADEMICS', label: 'Academic Grades & Performance', icon: Award },
     { id: 'ATTENDANCE', label: 'Attendance Logbook (≥75% Rule)', icon: CalendarCheck },
     { id: 'HOMEWORK', label: `Homework (${homeworkList?.length || 0}) & Faculty Remarks`, icon: FileText },
@@ -179,40 +238,35 @@ export default function ParentDashboardPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header with Child Selector & Transcript Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-0.5 text-xs font-bold text-blue-700">
-              <GraduationCap className="h-3.5 w-3.5" />
-              <span>{activeChild ? `${activeChild.name}` : 'Student'}</span>
-            </span>
-            {childClassId && (
-              <span className="text-xs text-slate-400 font-medium">
-                Enrolled Student
-              </span>
-            )}
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            Parent Academic Portal
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Review {activeChild ? `${activeChild.name}'s` : "your child's"} syllabus grades, subject attendance compliance, homework, and teacher remarks.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          {activeChildId && (
-            <button
-              onClick={() => setIsReportModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-sm transition cursor-pointer"
-            >
-              <Award className="w-4 h-4 text-amber-300" />
-              <span>Official Academic Transcript</span>
-            </button>
-          )}
-        </div>
-      </div>
+      {/* 1. LMS Hero Banner & Quick Actions */}
+      <LmsHeroBanner
+        greetingTitle={`Welcome, ${user?.name || 'Guardian'}!`}
+        greetingSubtitle={`Track ${activeChild ? activeChild.name + "'s" : "your child's"} syllabus progress, attendance compliance, exam grades, and teacher remarks.`}
+        badge1={{
+          icon: GraduationCap,
+          label: 'Student',
+          value: activeChild?.name || 'Enrolled Ward',
+          color: 'pink',
+        }}
+        badge2={{
+          icon: BookOpen,
+          label: 'Class',
+          value: activeChild?.grade ? `Grade ${activeChild.grade}` : 'Active',
+          color: 'amber',
+        }}
+        illustrationSrc="/assets/student_banner_illustration.jpg"
+        actionTitle="Guardian Quick Action"
+        actionBtnText="📄 Official Academic Transcript"
+        onActionClick={() => setIsReportModalOpen(true)}
+        statBox1={{
+          label: 'Enrolled Subjects',
+          value: `${subjects?.length || 6}`,
+        }}
+        statBox2={{
+          label: 'Pending Tasks',
+          value: `${homeworkList?.length || 0}`,
+        }}
+      />
 
       {/* Child Switcher (if parent has multiple enrolled children) */}
       {children && children.length > 1 && (
@@ -261,6 +315,162 @@ export default function ParentDashboardPage() {
       </div>
 
       {/* 3. Tab Content Panels */}
+
+      {/* TAB 0: DASHBOARD OVERVIEW */}
+      {activeTab === 'OVERVIEW' && (
+        <div className="space-y-6">
+          {/* Row 2: Popular Courses | Current Activity | Best Instructors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
+            <div className="lg:col-span-4 flex">
+              <div className="w-full">
+                <PopularCoursesWidget
+                  title="Enrolled Subjects"
+                  viewAllText="View Grades"
+                  onViewAll={() => setActiveTab('ACADEMICS')}
+                  courses={childCourses}
+                  onCourseClick={() => setActiveTab('ACADEMICS')}
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 flex">
+              <div className="w-full">
+                <ActivityProgressWidget
+                  title="Academic Growth"
+                  chartSubtitle="Monthly Score Trajectory"
+                  stat1={{
+                    value: '92%',
+                    label: 'Term Attendance',
+                    bgColor: 'from-amber-400 to-amber-500',
+                    onClick: () => setActiveTab('ATTENDANCE'),
+                  }}
+                  stat2={{
+                    value: 'Grade A',
+                    label: 'Academic Standing',
+                    bgColor: 'from-rose-500 to-rose-600',
+                    onClick: () => setActiveTab('ACADEMICS'),
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 flex">
+              <div className="w-full">
+                <BestInstructorsWidget
+                  title="Subject Teachers"
+                  viewAllText="Faculty Feedback"
+                  onViewAll={() => setActiveTab('HOMEWORK')}
+                  instructors={childTeachers}
+                  onChat={() => setActiveTab('HOMEWORK')}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Performance Bar | Attendance Donut | Engagement Trend */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
+            <div className="lg:col-span-5 flex">
+              <div className="w-full">
+                <SchoolPerformanceBarWidget
+                  title="Subject Scores Breakdown"
+                  data={[
+                    { name: 'Mathematics', score: 88, color: '#0ea5e9' },
+                    { name: 'Physics', score: 82, color: '#6366f1' },
+                    { name: 'Chemistry', score: 79, color: '#14b8a6' },
+                    { name: 'English', score: 91, color: '#f43f5e' },
+                    { name: 'Social Studies', score: 85, color: '#f59e0b' },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 flex">
+              <div className="w-full">
+                <OverallPassDonutWidget
+                  title="Attendance Compliance"
+                  passRate={92}
+                  failRate={8}
+                  passLabel="Present (≥75%)"
+                  failLabel="Absent"
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-3 flex">
+              <div className="w-full">
+                <ContentUsageTrendWidget
+                  title="Learning Engagement"
+                  trendText="5.2% higher this month"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Access & Announcements */}
+          <div className="grid gap-6 lg:grid-cols-2 pt-2">
+            <AnnouncementsWidget limit={3} title="Recent School Notices" />
+
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Guardian Quick Shortcuts
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Access examination results, teacher remarks, or download official report cards.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <button
+                    onClick={() => setActiveTab('ACADEMICS')}
+                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-100 transition text-left"
+                  >
+                    <Award size={18} className="text-indigo-600" />
+                    <span className="text-xs font-bold text-indigo-950 mt-1">Academics</span>
+                    <span className="text-[10px] text-indigo-600 font-medium">Exam marks deck</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('ATTENDANCE')}
+                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-teal-50/70 hover:bg-teal-100/70 border border-teal-100 transition text-left"
+                  >
+                    <CalendarCheck size={18} className="text-teal-600" />
+                    <span className="text-xs font-bold text-teal-950 mt-1">Attendance</span>
+                    <span className="text-[10px] text-teal-600 font-medium">≥75% compliance log</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('HOMEWORK')}
+                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border border-amber-100 transition text-left"
+                  >
+                    <FileText size={18} className="text-amber-600" />
+                    <span className="text-xs font-bold text-amber-950 mt-1">Homework</span>
+                    <span className="text-[10px] text-amber-600 font-medium">Teacher feedback</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsReportModalOpen(true)}
+                    className="flex flex-col items-start gap-1 p-3.5 rounded-2xl bg-rose-50/70 hover:bg-rose-100/70 border border-rose-100 transition text-left"
+                  >
+                    <Download size={18} className="text-rose-600" />
+                    <span className="text-xs font-bold text-rose-950 mt-1">Report Card</span>
+                    <span className="text-[10px] text-rose-600 font-medium">Download PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">{activeChild?.name} • Grade {activeChild?.grade || 'Active'}</span>
+                <button
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  Download Transcript →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: ACADEMICS & GRADES */}
       {activeTab === 'ACADEMICS' && (
