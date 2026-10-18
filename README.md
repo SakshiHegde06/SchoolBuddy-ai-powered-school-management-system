@@ -28,10 +28,10 @@ Built using modern technologies like React, Spring Boot, MongoDB, and AI-based f
 - 🎓 **Student Dashboard**
   - View personal academic information and class timetable
   - Access marks, attendance, homework, and study materials
-  - Interactive AI Study Tutor for revision and concept clarification
+  - Interactive AI Study Tutor for clearing academic doubts and revision
 
 - 🤖 **AI-Powered Features**
-  - **AI Study Tutor**: Context-aware academic assistant with strict educational guardrails that generates concept explanations, summaries, MCQs, and exam questions (5M/10M) from study materials
+  - **AI Study Tutor**: Context-aware academic assistant with strict educational guardrails designed to resolve student doubts and provide step-by-step concept explanations from study materials
   - **Student Performance Analysis**: Linear regression trend forecasting on assessment history
   - **Academic Risk Detection**: Early warning identification of declining subjects and tailored improvement recommendations
 
