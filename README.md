@@ -11,27 +11,29 @@ Built using modern technologies like React, Spring Boot, MongoDB, and AI-based f
 - 👨‍💼 **Admin Dashboard**
   - Manage students, teachers, classes, and subjects
   - Assign teachers to subjects and classes
+  - Interactive weekly class timetable scheduler & slot management
   - Publish announcements and events
 
 - 👩‍🏫 **Teacher Dashboard**
-  - View assigned classes and subjects
+  - View assigned classes, subjects, and timetable schedules
   - Upload marks and attendance
   - Add student remarks
-  - Share homework and academic updates
+  - Share homework, study materials, and academic updates
 
 - 👨‍👩‍👧 **Parent Dashboard**
-  - Monitor attendance
-  - View academic performance
-  - Track student progress and improvements
+  - Monitor daily attendance
+  - View academic performance and report cards
+  - Track student progress and teacher remarks
 
 - 🎓 **Student Dashboard**
-  - View personal academic information
-  - Access marks, attendance, homework, and remarks
+  - View personal academic information and class timetable
+  - Access marks, attendance, homework, and study materials
+  - Interactive AI Study Tutor for revision and concept clarification
 
 - 🤖 **AI-Powered Features**
-  - Smart timetable generation without teacher/class conflicts
-  - Student performance analysis
-  - Risk prediction and improvement suggestions based on academic history
+  - **AI Study Tutor**: Context-aware academic assistant with strict educational guardrails that generates concept explanations, summaries, MCQs, and exam questions (5M/10M) from study materials
+  - **Student Performance Analysis**: Linear regression trend forecasting on assessment history
+  - **Academic Risk Detection**: Early warning identification of declining subjects and tailored improvement recommendations
 
 ## Tech Stack 🛠️
 
@@ -39,23 +41,21 @@ Built using modern technologies like React, Spring Boot, MongoDB, and AI-based f
 - React.js (Vite)
 - Tailwind CSS
 - JavaScript
+- Lucide Icons
 
 **Backend**
-- Java
-- Spring Boot
+- Java 17
+- Spring Boot 3
+- Spring Security (JWT)
 - REST APIs
 
-**Database**
-- MongoDB
+**Database & Cloud**
+- MongoDB / MongoDB Atlas
 
-**Tools**
-- Git & GitHub
-- Maven
-- VS Code
+**Deployment**
+- Frontend: Vercel
+- Backend: Render
 
 ## Goal 🎯
 
 The goal of SCHOOLBUDDY is to reduce manual effort in school administration and provide an intelligent platform that improves interaction, transparency, and decision-making between schools, teachers, students, and parents.
-
-##screenshots
-
