@@ -293,7 +293,7 @@ export default function StudyMaterialPage() {
             </h1>
             <p className="mt-2 text-sm text-slate-300 leading-relaxed">
               Upload certified syllabus notes, lecture slides, and reference links.
-              Preview AI-generated practice MCQs, key revision topics, and 5M/10M marking rubrics
+              Preview AI-generated practice MCQs, key revision topics, and tutoring explanations
               that your students will receive.
             </p>
           </div>
@@ -706,12 +706,12 @@ export default function StudyMaterialPage() {
                         <span>Notes</span>
                       </button>
                       <button
-                        onClick={() => handleOpenAi(material, '5M')}
-                        className="inline-flex items-center gap-1 rounded-lg bg-white hover:bg-sky-50 border border-sky-200 px-2.5 py-1 text-xs font-semibold text-sky-900 transition cursor-pointer"
-                        title="Preview 5M questions & rubrics"
+                        onClick={() => handleOpenAi(material, 'CHAT')}
+                        className="inline-flex items-center gap-1 rounded-lg bg-white hover:bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-900 transition cursor-pointer"
+                        title="Open AI Tutor Chat"
                       >
-                        <FileQuestion className="h-3 w-3 text-sky-700" />
-                        <span>5M/10M</span>
+                        <Sparkles className="h-3 w-3 text-indigo-600" />
+                        <span>AI Tutor</span>
                       </button>
                     </div>
 

@@ -260,21 +260,24 @@ export default function StudyMaterialsPage() {
   }
 
   const [generalTopicInput, setGeneralTopicInput] = useState('')
+  const [aiTutorInitialQuestion, setAiTutorInitialQuestion] = useState('')
 
-  // Open General AI Study Tutor (topic-driven, decoupled from any PDF)
-  function handleOpenGeneralTutor(tab = 'MCQ', topicOverride = null) {
-    const topic = topicOverride || generalTopicInput.trim() || 'Chemical Reactions & Equations'
+  // Open General AI Study Tutor directly to chat mode with student's question
+  function handleOpenGeneralTutor(inputOverride = null) {
+    const raw = (inputOverride !== null ? inputOverride : generalTopicInput).trim()
+    const topic = raw || 'Science & Mathematics'
     setSelectedMaterialForAi({
       id: null,
       title: topic,
       subjectName: 'Science',
     })
-    setAiTutorInitialTab(tab)
+    setAiTutorInitialTab('CHAT')
+    setAiTutorInitialQuestion(raw)
     setAiTutorModalOpen(true)
   }
 
   // Open AI Tutor directly to requested tab
-  function handleOpenAiTutor(material, tab = 'TOPICS') {
+  function handleOpenAiTutor(material, tab = 'CHAT') {
     setSelectedMaterialForAi(material || currentHubMaterial)
     setAiTutorInitialTab(tab)
     setAiTutorModalOpen(true)
@@ -330,8 +333,8 @@ export default function StudyMaterialsPage() {
           </h1>
           <p className="text-xs sm:text-sm text-paper-200/80 leading-relaxed">
             Access certified course materials, download syllabus notes, and launch your
-            interactive <strong>AI Study Tutor</strong> for key bullet points, practice MCQs,
-            and 5M/10M exam preparation model answers.
+            interactive <strong>AI Study Tutor</strong> for instant explanations, step-by-step
+            answers, and academic doubt solving.
           </p>
 
           {/* Key Stats Bar */}
@@ -348,14 +351,14 @@ export default function StudyMaterialsPage() {
             <span className="text-white/20">&bull;</span>
             <div className="flex items-center gap-1.5 text-amber-300 font-medium">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>AI Exam Readiness Active</span>
+              <span>AI Academic Tutor Active</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ======================================================== */}
-      {/* ⚡ GENERAL AI STUDY TUTOR STUDIO BANNER ⚡              */}
+      {/* ⚡ ACADEMIC AI TUTOR STUDIO BANNER ⚡                   */}
       {/* ======================================================== */}
       <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 p-6 text-white shadow-lg relative overflow-hidden">
         <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
@@ -364,19 +367,19 @@ export default function StudyMaterialsPage() {
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 border border-indigo-400/30 px-3 py-1 text-xs font-bold text-indigo-200 mb-2.5">
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>General AI Study Tutor • Syllabus Questions Only</span>
+              <span>Academic AI Tutor • Instant Answers & Explanations</span>
             </div>
             <h2 className="font-display text-xl font-bold text-white tracking-tight">
-              Academic AI Study Tutor
+              Academic AI Tutor
             </h2>
             <p className="text-xs text-indigo-200/90 mt-1 leading-relaxed">
-              Type any syllabus topic or chapter keywords below to generate practice MCQs, 5M & 10M questions, bullet notes, or ask doubts. Strictly filtered for academic studies.
+              Ask any question related to any academic topic, school syllabus, formulas, or homework doubt. Get instant, step-by-step explanations and answers.
             </p>
           </div>
 
-          {/* Keyword Input & Action Buttons */}
-          <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            <div className="relative min-w-[280px]">
+          {/* Question Input & Single "Ask AI Tutor" Button */}
+          <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative min-w-[280px] sm:min-w-[340px] lg:min-w-[380px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
@@ -385,48 +388,21 @@ export default function StudyMaterialsPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
-                    handleOpenGeneralTutor('MCQ')
+                    handleOpenGeneralTutor()
                   }
                 }}
-                placeholder="Type study keywords (e.g. Photosynthesis, Trigonometry)..."
+                placeholder="Ask any academic question (e.g. Explain photosynthesis)..."
                 className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm pl-10 pr-3 py-2.5 text-xs text-white placeholder:text-indigo-200/60 focus:bg-white focus:text-slate-900 focus:placeholder:text-slate-400 focus:outline-none transition-all shadow-inner"
               />
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => handleOpenGeneralTutor('MCQ')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
-                title="Generate practice multiple-choice questions"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Practice MCQs</span>
-              </button>
-              <button
-                onClick={() => handleOpenGeneralTutor('5M')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
-                title="Generate 5-mark and 10-mark exam questions"
-              >
-                <FileQuestion className="h-4 w-4" />
-                <span>5M / 10M</span>
-              </button>
-              <button
-                onClick={() => handleOpenGeneralTutor('TOPICS')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition cursor-pointer"
-                title="Generate bullet revision notes"
-              >
-                <BookOpen className="h-4 w-4" />
-                <span>Notes</span>
-              </button>
-              <button
-                onClick={() => handleOpenGeneralTutor('CHAT')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 px-3.5 py-2.5 text-xs font-bold text-white transition cursor-pointer"
-                title="Ask an academic doubt"
-              >
-                <Sparkles className="h-4 w-4 text-amber-300" />
-                <span>Ask Tutor</span>
-              </button>
-            </div>
+            <button
+              onClick={() => handleOpenGeneralTutor()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-500/25 transition cursor-pointer shrink-0"
+            >
+              <Sparkles className="h-4 w-4 text-amber-300" />
+              <span>Ask AI Tutor</span>
+            </button>
           </div>
         </div>
       </div>
@@ -644,10 +620,12 @@ export default function StudyMaterialsPage() {
       <AiStudyTutorModal
         material={selectedMaterialForAi}
         initialTab={aiTutorInitialTab}
+        initialQuestion={aiTutorInitialQuestion}
         isOpen={aiTutorModalOpen}
         onClose={() => {
           setAiTutorModalOpen(false)
           setSelectedMaterialForAi(null)
+          setAiTutorInitialQuestion('')
         }}
       />
     </div>

@@ -6,8 +6,6 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  FileQuestion,
-  Award,
   Send,
   Copy,
   Check,
@@ -69,7 +67,8 @@ const PRESET_CHAPTERS = {
 
 export default function AiStudyTutorModal({
   material,
-  initialTab = 'MCQ',
+  initialTab = 'CHAT',
+  initialQuestion = '',
   isOpen,
   onClose,
 }) {
@@ -91,8 +90,6 @@ export default function AiStudyTutorModal({
   // Cached data for each tab to avoid unrequested calls
   const [topicsData, setTopicsData] = useState(null)
   const [mcqData, setMcqData] = useState(null)
-  const [fiveMData, setFiveMData] = useState(null)
-  const [tenMData, setTenMData] = useState(null)
 
   // MCQ interactive state: { [questionId]: selectedOptionIndex }
   const [selectedAnswers, setSelectedAnswers] = useState({})
@@ -124,14 +121,18 @@ export default function AiStudyTutorModal({
       setTopicInput(initTop)
       resetTutorData()
       initChatGreeting(initSub, initTop)
+
+      if (initialQuestion && initialQuestion.trim()) {
+        setTimeout(() => {
+          handleSendChat(initialQuestion.trim())
+        }, 120)
+      }
     }
-  }, [isOpen, material])
+  }, [isOpen, material, initialQuestion])
 
   function resetTutorData() {
     setTopicsData(null)
     setMcqData(null)
-    setFiveMData(null)
-    setTenMData(null)
     setSelectedAnswers({})
     setError(null)
   }
@@ -140,11 +141,11 @@ export default function AiStudyTutorModal({
     setChatMessages([
       {
         role: 'tutor',
-        text: `Hello! I am your **SchoolBuddy AI Study Tutor** for **${top}** (${sub}).\n\nI can generate comprehensive practice MCQs, 5-mark and 10-mark exam questions with rubrics, bullet revision notes, or answer any conceptual doubt whenever you ask. What would you like to prepare?`,
+        text: `Hello! I am your **SchoolBuddy Academic AI Tutor** for **${top}** (${sub}).\n\nAsk me any question on this topic or any school academic subject. I can solve problems step-by-step, explain concepts, give definitions, or clarify any doubts. What would you like to ask?`,
         followUps: [
-          `Explain the core mechanism of ${top}`,
-          'Give me 3 memory mnemonics for this topic',
-          'What are the most common exam traps here?',
+          `Explain the key principles of ${top}`,
+          `Give a step-by-step example problem on ${top}`,
+          `What are the most common misconceptions in ${top}?`,
         ],
       },
     ])
@@ -203,8 +204,6 @@ export default function AiStudyTutorModal({
     if (!force) {
       if (mode === 'TOPICS' && topicsData) return
       if (mode === 'MCQ' && mcqData) return
-      if (mode === '5M' && fiveMData) return
-      if (mode === '10M' && tenMData) return
     }
     if (mode === 'CHAT') return
 
@@ -240,11 +239,9 @@ export default function AiStudyTutorModal({
 
       if (mode === 'TOPICS') setTopicsData(data)
       else if (mode === 'MCQ') setMcqData(data)
-      else if (mode === '5M') setFiveMData(data)
-      else if (mode === '10M') setTenMData(data)
     } catch (err) {
       console.error('Failed to load AI Tutor data:', err)
-      setError('Unable to generate AI questions right now. Please try again.')
+      setError('Unable to load AI Tutor data right now. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -472,34 +469,22 @@ export default function AiStudyTutorModal({
         <div className="flex border-b border-slate-200 bg-slate-50 px-6 overflow-x-auto scrollbar-none">
           {[
             {
-              id: 'MCQ',
-              label: 'Practice MCQs',
-              icon: CheckCircle2,
-              badge: mcqData ? `${mcqs.length} Qs` : 'On-Demand',
-            },
-            {
-              id: '5M',
-              label: '5-Mark Questions',
-              icon: FileQuestion,
-              badge: fiveMData ? 'Generated' : 'On-Demand',
-            },
-            {
-              id: '10M',
-              label: '10-Mark Questions',
-              icon: Award,
-              badge: tenMData ? 'Generated' : 'On-Demand',
+              id: 'CHAT',
+              label: 'Ask AI Tutor',
+              icon: Sparkles,
+              badge: 'Live Q&A',
             },
             {
               id: 'TOPICS',
-              label: 'Important Topics',
+              label: 'Revision Notes',
               icon: BookOpen,
               badge: topicsData ? 'Generated' : 'On-Demand',
             },
             {
-              id: 'CHAT',
-              label: 'Ask AI Tutor',
-              icon: Sparkles,
-              badge: 'Live Tutor',
+              id: 'MCQ',
+              label: 'Practice MCQs',
+              icon: CheckCircle2,
+              badge: mcqData ? `${mcqs.length} Qs` : 'On-Demand',
             },
           ].map((tab) => {
             const Icon = tab.icon
@@ -782,322 +767,6 @@ export default function AiStudyTutorModal({
             </>
           )}
 
-          {/* ======================================================== */}
-          {/* TAB 2: 5-MARK QUESTIONS WITH MODEL ANSWERS               */}
-          {/* ======================================================== */}
-          {!loading && !error && activeTab === '5M' && (
-            <>
-              {!fiveMData ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 text-center max-w-xl mx-auto">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 mb-4 shadow-sm border border-sky-200">
-                    <FileQuestion className="h-8 w-8" />
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-900 mb-2">
-                    {selectedSubject} • {selectedTopic}
-                  </span>
-                  <h4 className="font-display text-xl font-bold text-slate-900">
-                    High-Yield 5-Mark Exam Questions
-                  </h4>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Generate standard 5-mark examination questions on <strong>{selectedTopic}</strong>, including step-by-step scoring rubrics, expected examiner evaluation points, and full top-score model answers.
-                  </p>
-                  <button
-                    onClick={() => fetchTabData('5M', true)}
-                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold px-6 py-3 text-sm shadow-md shadow-sky-600/25 transition cursor-pointer"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    <span>Generate 5M Questions on {selectedTopic}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-6 max-w-4xl mx-auto">
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-display text-base font-bold text-slate-900">
-                          {selectedTopic} (5 Marks)
-                        </h4>
-                        <span className="text-[11px] font-bold text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md">
-                          {selectedSubject}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Targeted short/conceptual questions formatted for full marks with step-marking rubrics
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => fetchTabData('5M', true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        <span>Regenerate</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const text = (fiveMData.fiveMarkQuestions || [])
-                            .map(
-                              (q, i) =>
-                                `Q${i + 1} [5 Marks]: ${q.question}\n\nModel Answer:\n${
-                                  q.modelAnswer
-                                }\n\nMarking Rubric: ${q.markingRubric}\nExam Tip: ${q.examTip}\n---`
-                            )
-                            .join('\n\n')
-                          copyToClipboard(text, '5m')
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition cursor-pointer"
-                      >
-                        {copiedSection === '5m' ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 text-emerald-400" />
-                            <span>Copied All 5M!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" />
-                            <span>Copy All Q&A</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5">
-                    {(fiveMData.fiveMarkQuestions || []).map((q, idx) => (
-                      <div
-                        key={q.id || idx}
-                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-2.5">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 text-white text-xs font-bold shrink-0">
-                              Q{idx + 1}
-                            </span>
-                            <h5 className="font-display text-sm font-bold text-slate-900 leading-snug">
-                              {q.question}
-                            </h5>
-                          </div>
-                          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-800 border border-sky-200 shrink-0">
-                            5 Marks
-                          </span>
-                        </div>
-
-                        {q.keyPoints && q.keyPoints.length > 0 && (
-                          <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
-                              Examiner Step-Marking Breakdown:
-                            </span>
-                            <ul className="space-y-1 text-xs text-slate-800">
-                              {q.keyPoints.map((kp, i) => (
-                                <li key={i} className="flex items-start gap-2">
-                                  <span className="text-sky-600 font-bold">•</span>
-                                  <span>{kp}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        <div className="rounded-xl border border-slate-200 bg-white p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold uppercase text-slate-900 tracking-wider">
-                              Full Model Answer (Top-Score Formatting):
-                            </span>
-                            <button
-                              onClick={() => copyToClipboard(q.modelAnswer, `5m-${idx}`)}
-                              className="text-[11px] text-slate-500 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
-                            >
-                              {copiedSection === `5m-${idx}` ? (
-                                <Check className="h-3 w-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                              <span>Copy Answer</span>
-                            </button>
-                          </div>
-                          <div className="whitespace-pre-line text-xs text-slate-800 leading-relaxed font-sans">
-                            {q.modelAnswer}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600">
-                          <span className="font-medium text-slate-900">
-                            Rubric:{' '}
-                            <span className="text-slate-600 font-normal">
-                              {q.markingRubric}
-                            </span>
-                          </span>
-                          {q.examTip && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-amber-800 border border-amber-200">
-                              <Lightbulb className="h-3 w-3 text-amber-600" />
-                              {q.examTip}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ======================================================== */}
-          {/* TAB 3: 10-MARK QUESTIONS WITH DETAILED ESSAYS            */}
-          {/* ======================================================== */}
-          {!loading && !error && activeTab === '10M' && (
-            <>
-              {!tenMData ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 text-center max-w-xl mx-auto">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 mb-4 shadow-sm border border-indigo-200">
-                    <Award className="h-8 w-8" />
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-900 mb-2">
-                    {selectedSubject} • {selectedTopic}
-                  </span>
-                  <h4 className="font-display text-xl font-bold text-slate-900">
-                    Comprehensive 10-Mark Essay & Analytical Questions
-                  </h4>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Generate multi-section 10-mark questions on <strong>{selectedTopic}</strong> featuring complete mathematical derivations, laboratory experimental procedures, and sectional rubric breakdowns.
-                  </p>
-                  <button
-                    onClick={() => fetchTabData('10M', true)}
-                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 text-sm shadow-md shadow-indigo-600/25 transition cursor-pointer"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    <span>Generate 10M Questions on {selectedTopic}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-6 max-w-4xl mx-auto">
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-display text-base font-bold text-slate-900">
-                          {selectedTopic} (10 Marks)
-                        </h4>
-                        <span className="text-[11px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                          {selectedSubject}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        In-depth questions with multi-section structured answers, diagrams, and section-by-section rubrics
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => fetchTabData('10M', true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        <span>Regenerate</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const text = (tenMData.tenMarkQuestions || [])
-                            .map(
-                              (q, i) =>
-                                `Q${i + 1} [10 Marks]: ${q.question}\n\nModel Answer:\n${
-                                  q.modelAnswer
-                                }\n\nMarking Rubric: ${q.markingRubric}\nExam Tip: ${q.examTip}\n===`
-                            )
-                            .join('\n\n')
-                          copyToClipboard(text, '10m')
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition cursor-pointer"
-                      >
-                        {copiedSection === '10m' ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 text-emerald-400" />
-                            <span>Copied All 10M!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" />
-                            <span>Copy All Q&A</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {(tenMData.tenMarkQuestions || []).map((q, idx) => (
-                      <div
-                        key={q.id || idx}
-                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-2.5">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-bold shrink-0">
-                              Q{idx + 1}
-                            </span>
-                            <h5 className="font-display text-sm font-bold text-slate-900 leading-snug">
-                              {q.question}
-                            </h5>
-                          </div>
-                          <span className="rounded-full bg-slate-900 px-3 py-0.5 text-xs font-bold text-white shrink-0">
-                            10 Marks
-                          </span>
-                        </div>
-
-                        {q.keyPoints && q.keyPoints.length > 0 && (
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            {q.keyPoints.map((kp, i) => (
-                              <div
-                                key={i}
-                                className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-800 font-medium flex items-center gap-2"
-                              >
-                                <span className="h-2 w-2 rounded-full bg-indigo-600" />
-                                <span>{kp}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold uppercase text-slate-900 tracking-wider">
-                              Comprehensive 10-Mark Model Answer Structure:
-                            </span>
-                            <button
-                              onClick={() => copyToClipboard(q.modelAnswer, `10m-${idx}`)}
-                              className="text-[11px] text-slate-500 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
-                            >
-                              {copiedSection === `10m-${idx}` ? (
-                                <Check className="h-3 w-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                              <span>Copy Answer</span>
-                            </button>
-                          </div>
-                          <div className="whitespace-pre-line text-xs text-slate-800 leading-relaxed font-sans">
-                            {q.modelAnswer}
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl bg-amber-50/80 p-3.5 border border-amber-200 text-xs text-slate-800 flex flex-wrap items-center justify-between gap-2">
-                          <span className="font-bold text-slate-900">
-                            Marking Scheme Breakdown:{' '}
-                            <span className="font-normal text-slate-700">
-                              {q.markingRubric}
-                            </span>
-                          </span>
-                          {q.examTip && (
-                            <span className="text-amber-900 font-semibold">
-                              Tip: {q.examTip}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
 
           {/* ======================================================== */}
           {/* TAB 4: IMPORTANT TOPICS (BULLET POINTS)                  */}

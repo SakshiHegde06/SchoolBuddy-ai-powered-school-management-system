@@ -117,11 +117,11 @@ public class AiTutorServiceImpl implements AiTutorService {
                     .subject(subject)
                     .academic(false)
                     .guardrailNotice("🔒 Academic Guardrail Active: SchoolBuddy AI Study Tutor is strictly restricted to educational curriculum, syllabus concepts, and exam preparations. Requests outside of academic studies (e.g. video games, entertainment, celebrities, jokes, social media, sports scores) are not permitted.")
-                    .chatAnswer("I am your dedicated SchoolBuddy Academic Study Tutor! I only assist with academic curriculum topics, conceptual doubts, formulas, homework, and exam prep (such as MCQs, 5M, and 10M questions). Please enter a school syllabus topic (e.g., Photosynthesis, Quadratic Equations, Newton's Laws, Chemical Reactions).")
+                    .chatAnswer("I am your dedicated SchoolBuddy Academic Study Tutor! I assist with academic curriculum topics, conceptual doubts, formulas, homework explanations, and study revision. Please enter a school syllabus topic or ask your academic question.")
                     .followUpQuestions(List.of(
                             "Can you explain the key concepts of Photosynthesis?",
                             "Generate practice MCQs on Quadratic Equations",
-                            "What are the common 5-mark questions in Chemistry?"
+                            "Explain Newton's Laws with real-life examples"
                     ))
                     .build();
         }
@@ -1390,15 +1390,15 @@ public class AiTutorServiceImpl implements AiTutorService {
                 + "In " + subject + ", this concept is governed by standard syllabus rules and conservation principles.\n"
                 + "- **Key Formula**: Keep the primary governing identity in mind.\n"
                 + "- **Exam Rubric**: Show intermediate steps and label all final units.\n\n"
-                + "Feel free to generate practice MCQs or 5M/10M exam questions from the tabs above!";
+                + "Feel free to ask more questions or explore practice MCQs and revision notes!";
     }
 
     private List<String> generateFollowUps(String topic, String subject) {
         return List.of(
-                "Generate all practice MCQs on " + topic,
-                "What is a typical 5-mark question from this chapter?",
-                "Give me a 10-mark model answer outline with marking rubric",
-                "What are the top memory mnemonics for this topic?"
+                "Can you explain the core concepts of " + topic + "?",
+                "Give me 3 memory mnemonics for " + topic,
+                "What are the most common exam questions and pitfalls?",
+                "Generate practice MCQs on " + topic
         );
     }
 
