@@ -43,6 +43,12 @@ public class AiTutorServiceImpl implements AiTutorService {
     @Value("${openai.api.key:mock-key}")
     private String apiKey;
 
+    @Value("${app.gemini.api-key:${GEMINI_API_KEY:mock-key}}")
+    private String geminiApiKey;
+
+    @Value("${app.gemini.model:${GEMINI_MODEL:gemini-1.5-flash}}")
+    private String geminiModel;
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -1379,13 +1385,19 @@ public class AiTutorServiceImpl implements AiTutorService {
                     + "Ask me any question on any academic subject, syllabus concept, or homework problem, and I'll explain it clearly step-by-step!";
         }
 
-        // 1. Try real external LLM (OpenAI) if API key is provided
+        // 1. Try Google Gemini Flash (e.g. gemini-1.5-flash / gemini-2.0-flash / gemini-2.5-flash)
+        String geminiAnswer = callGeminiIfConfigured(query, topic, subject);
+        if (geminiAnswer != null && !geminiAnswer.isBlank()) {
+            return geminiAnswer;
+        }
+
+        // 2. Try external LLM (OpenAI) if API key is provided
         String openAiAnswer = callOpenAiIfConfigured(query, topic, subject);
         if (openAiAnswer != null && !openAiAnswer.isBlank()) {
             return openAiAnswer;
         }
 
-        // 2. Intelligent, domain-accurate academic knowledge engine
+        // 3. Intelligent, domain-accurate academic knowledge engine
         String qLower = query.toLowerCase();
 
         // 2.1 PHOTOSYNTHESIS
@@ -1434,6 +1446,71 @@ public class AiTutorServiceImpl implements AiTutorService {
 
         // 2.9 GENERAL CURRICULUM TOPIC EXPLANATION
         return generateGeneralAcademicExplanation(query, topic, subject, domain, extractedText);
+    }
+
+    private String callGeminiIfConfigured(String query, String topic, String subject) {
+        if (geminiApiKey == null || geminiApiKey.isBlank() || geminiApiKey.equalsIgnoreCase("mock-key") || geminiApiKey.length() < 15) {
+            return null;
+        }
+
+        List<String> modelsToTry = new ArrayList<>();
+        if (geminiModel != null && !geminiModel.isBlank()) {
+            modelsToTry.add(geminiModel.trim());
+        }
+        if (!modelsToTry.contains("gemini-2.0-flash")) {
+            modelsToTry.add("gemini-2.0-flash");
+        }
+        if (!modelsToTry.contains("gemini-1.5-flash")) {
+            modelsToTry.add("gemini-1.5-flash");
+        }
+
+        String prompt = "You are an encouraging, expert SchoolBuddy Academic AI Tutor for middle and high school students (Grades 6-12).\n"
+                + "Provide clear, structured, pedagogically sound, step-by-step academic explanations for homework doubts, syllabus topics, and science/math problems.\n"
+                + "Guidelines:\n"
+                + "- Structure your answer with clear markdown subheadings (e.g. Core Definition & Principle, Step-by-Step Explanation / Mechanism / Derivation, Real-World Example, and Exam Essentials).\n"
+                + "- For mathematical equations, solve step-by-step with intermediate lines and show verification.\n"
+                + "- For science concepts, include relevant balanced equations, chemical formulas, and precise scientific terminology.\n"
+                + "- STRICT GUARDRAIL: Only answer academic and educational curriculum questions. Politely decline non-academic topics (video games, celebrity gossip, memes, jokes).\n\n"
+                + "Subject: " + (subject != null ? subject : "General Studies") + "\n"
+                + "Topic: " + (topic != null ? topic : "Academic Inquiry") + "\n"
+                + "Student Question: " + query;
+
+        for (String model : modelsToTry) {
+            try {
+                String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + geminiApiKey.trim();
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                Map<String, Object> textPart = Map.of("text", prompt);
+                Map<String, Object> contentObj = Map.of("parts", List.of(textPart));
+                Map<String, Object> reqBody = Map.of("contents", List.of(contentObj));
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(reqBody, headers);
+                ResponseEntity<Map> response = restTemplate.postForEntity(endpoint, entity, Map.class);
+
+                if (response.getBody() != null) {
+                    List candidates = (List) response.getBody().get("candidates");
+                    if (candidates != null && !candidates.isEmpty()) {
+                        Map firstCand = (Map) candidates.get(0);
+                        Map content = (Map) firstCand.get("content");
+                        if (content != null) {
+                            List parts = (List) content.get("parts");
+                            if (parts != null && !parts.isEmpty()) {
+                                Map firstPart = (Map) parts.get(0);
+                                String text = (String) firstPart.get("text");
+                                if (text != null && !text.isBlank()) {
+                                    return text.trim();
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Gemini model {} query failed: {}. Trying fallback.", model, e.getMessage());
+            }
+        }
+        return null;
     }
 
     private String callOpenAiIfConfigured(String query, String topic, String subject) {
