@@ -12,11 +12,19 @@ import com.school.repository.SubjectRepository;
 import com.school.service.AiTutorService;
 import com.school.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.InputStream;
 import java.util.*;
@@ -31,6 +39,12 @@ public class AiTutorServiceImpl implements AiTutorService {
     private final StudyMaterialRepository studyMaterialRepository;
     private final SubjectRepository subjectRepository;
     private final FileStorageService fileStorageService;
+
+    @Value("${openai.api.key:mock-key}")
+    private String apiKey;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Academic keywords and concepts to validate educational scope
     private static final Set<String> ACADEMIC_TERMS = Set.of(
@@ -1357,7 +1371,7 @@ public class AiTutorServiceImpl implements AiTutorService {
     }
 
     // -----------------------------------------------------------------------------------------
-    // 5. CHAT ANSWER GENERATOR (WITH STRICT GUARDRAIL)
+    // 5. CHAT ANSWER GENERATOR (WITH REAL AI INTEGRATION & EXPERT OFFLINE KNOWLEDGE ENGINE)
     // -----------------------------------------------------------------------------------------
     private String generateChatAnswer(String query, String topic, String subject, String domain, String extractedText) {
         if (query == null || query.isBlank()) {
@@ -1365,60 +1379,372 @@ public class AiTutorServiceImpl implements AiTutorService {
                     + "Ask me any question on any academic subject, syllabus concept, or homework problem, and I'll explain it clearly step-by-step!";
         }
 
+        // 1. Try real external LLM (OpenAI) if API key is provided
+        String openAiAnswer = callOpenAiIfConfigured(query, topic, subject);
+        if (openAiAnswer != null && !openAiAnswer.isBlank()) {
+            return openAiAnswer;
+        }
+
+        // 2. Intelligent, domain-accurate academic knowledge engine
         String qLower = query.toLowerCase();
+
+        // 2.1 PHOTOSYNTHESIS
+        if (qLower.contains("photosynthesis") || qLower.contains("chlorophyll") || qLower.contains("calvin cycle")) {
+            return generatePhotosynthesisExplanation(query);
+        }
+
+        // 2.2 LINEAR & QUADRATIC EQUATIONS (e.g., 2x + 7 = 19 or solve equation)
+        if (qLower.contains("solve") || qLower.contains("equation") || qLower.contains("calculate")
+                || qLower.contains("x +") || qLower.contains("x -") || qLower.contains("x =") || qLower.contains("roots")) {
+            String mathSolved = trySolveLinearOrQuadraticEquation(query);
+            if (mathSolved != null) {
+                return mathSolved;
+            }
+        }
+
+        // 2.3 NEWTON'S LAWS & MOTION
+        if (qLower.contains("newton") || qLower.contains("inertia") || qLower.contains("law of motion") || qLower.contains("laws of motion")) {
+            return generateNewtonsLawsExplanation(query);
+        }
+
+        // 2.4 CELLULAR RESPIRATION
+        if (qLower.contains("respiration") || qLower.contains("glycolysis") || qLower.contains("krebs")) {
+            return generateRespirationExplanation(query);
+        }
+
+        // 2.5 ACIDS, BASES & SALTS
+        if (qLower.contains("acid") || qLower.contains("base") || qLower.contains("ph scale") || qLower.contains("neutralization")) {
+            return generateAcidsBasesExplanation(query);
+        }
+
+        // 2.6 OHM'S LAW & ELECTRICITY
+        if (qLower.contains("ohm") || (qLower.contains("current") && qLower.contains("voltage")) || qLower.contains("resistance")) {
+            return generateOhmsLawExplanation(query);
+        }
+
+        // 2.7 CELL BIOLOGY & ORGANELLES
+        if (qLower.contains("cell") && (qLower.contains("organelle") || qLower.contains("mitochondria") || qLower.contains("nucleus") || qLower.contains("structure"))) {
+            return generateCellStructureExplanation(query);
+        }
+
+        // 2.8 MNEMONICS
+        if (qLower.contains("mnemonic") || qLower.contains("remember") || qLower.contains("memory") || qLower.contains("trick")) {
+            return generateMnemonicExplanation(query);
+        }
+
+        // 2.9 GENERAL CURRICULUM TOPIC EXPLANATION
+        return generateGeneralAcademicExplanation(query, topic, subject, domain, extractedText);
+    }
+
+    private String callOpenAiIfConfigured(String query, String topic, String subject) {
+        if (apiKey == null || apiKey.isBlank() || apiKey.equalsIgnoreCase("mock-key") || apiKey.length() < 15) {
+            return null;
+        }
+        try {
+            String url = "https://api.openai.com/v1/chat/completions";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(apiKey);
+
+            String systemPrompt = "You are an encouraging, expert SchoolBuddy Academic AI Tutor for middle and high school students (Grades 6-12).\n"
+                    + "Your mission is to provide clear, pedagogically sound, step-by-step academic explanations for syllabus concepts, homework doubts, and science/math problems.\n"
+                    + "Guidelines:\n"
+                    + "- Structure your answer with clear markdown subheadings (e.g. Core Concept, Step-by-Step Mechanism or Calculation, Real-World Example, and Exam Tips).\n"
+                    + "- For math questions, show each intermediate calculation step clearly with explanations.\n"
+                    + "- For science questions, include relevant balanced equations, chemical formulas, and precise scientific terminology.\n"
+                    + "- Maintain strict academic guardrails: politely decline non-educational queries (video games, celebrity gossip, jokes, social media).";
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("model", "gpt-4o-mini");
+            body.put("messages", List.of(
+                    Map.of("role", "system", "content", systemPrompt),
+                    Map.of("role", "user", "content", "Subject: " + (subject != null ? subject : "General Studies") + "\nTopic: " + (topic != null ? topic : "Academic Inquiry") + "\nStudent Question: " + query)
+            ));
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            if (response.getBody() != null) {
+                List choices = (List) response.getBody().get("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    Map firstChoice = (Map) choices.get(0);
+                    Map message = (Map) firstChoice.get("message");
+                    if (message != null && message.get("content") != null) {
+                        return ((String) message.get("content")).trim();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("OpenAI API tutor query failed, falling back to built-in academic engine: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private String generatePhotosynthesisExplanation(String query) {
+        return "### 🌿 Photosynthesis: Complete Step-by-Step Academic Guide\n\n"
+                + "Regarding your question: *\"" + query + "\"*\n\n"
+                + "#### 1. Core Definition & Balanced Chemical Equation\n"
+                + "**Photosynthesis** is the fundamental biochemical process by which autotrophic organisms (green plants, algae, and certain cyanobacteria) convert light energy into chemical energy stored in glucose ($C_6H_{12}O_6$), consuming carbon dioxide ($CO_2$) and water ($H_2O$) in the presence of sunlight and chlorophyll.\n\n"
+                + "**Balanced Chemical Equation:**\n"
+                + "$$6CO_2 + 6H_2O \\xrightarrow[\\text{Chlorophyll}]{\\text{Sunlight}} C_6H_{12}O_6 + 6O_2 \\uparrow$$\n\n"
+                + "#### 2. Site of Photosynthesis\n"
+                + "- **Organelle**: **Chloroplast** (found abundantly in the mesophyll cells of green leaves).\n"
+                + "- **Key Pigment**: **Chlorophyll** (primarily Chlorophyll *a* and *b* embedded in the thylakoid membranes, which absorb blue and red light and reflect green light).\n\n"
+                + "#### 3. Two Main Stages of the Process\n\n"
+                + "**Stage 1: Light-Dependent Reactions (Photochemical Phase)**\n"
+                + "- **Location**: **Thylakoid Membranes (Grana)** of the chloroplast.\n"
+                + "- **Activation**: Photons of sunlight excite chlorophyll electrons to higher energy levels.\n"
+                + "- **Photolysis of Water**: Water molecules split into hydrogen ions, electrons, and oxygen gas:\n"
+                + "  $$2H_2O \\rightarrow 4H^+ + 4e^- + O_2 \\uparrow$$\n"
+                + "- **Energy Carriers**: **ATP** and **NADPH** are generated; oxygen gas is released as a vital byproduct.\n\n"
+                + "**Stage 2: Light-Independent Reactions (Calvin Cycle / Biosynthetic Phase)**\n"
+                + "- **Location**: **Stroma** (dense fluid region) of the chloroplast.\n"
+                + "- **Carbon Fixation**: Enzyme **RuBisCO** fixes atmospheric $CO_2$ into a 3-carbon intermediate.\n"
+                + "- **Reduction & Synthesis**: ATP and NADPH reduce the carbon intermediate to synthesize **Glucose ($C_6H_{12}O_6$)**.\n\n"
+                + "#### 4. Factors Controlling the Rate of Photosynthesis\n"
+                + "1. **Light Intensity**: Rate increases linearly with light intensity until chlorophyll saturation occurs.\n"
+                + "2. **$CO_2$ Concentration**: Major atmospheric limiting factor; increasing $CO_2$ up to 0.05% boosts rate.\n"
+                + "3. **Temperature**: Governed by enzymatic activity (optimum between $25^\\circ\\text{C} - 35^\\circ\\text{C}$).\n"
+                + "4. **Water Availability**: Scarcity triggers stomata closure to prevent transpiration, limiting $CO_2$ uptake.\n\n"
+                + "#### 5. 💡 Exam Essentials & Common Pitfalls\n"
+                + "- **Critical Examination Fact**: The oxygen ($O_2$) released during photosynthesis comes strictly from the **splitting of water ($H_2O$)**, NOT from $CO_2$!\n"
+                + "- **Storage Form**: Plants store excess glucose as insoluble **Starch**, and transport it as **Sucrose** through the phloem.";
+    }
+
+    private String trySolveLinearOrQuadraticEquation(String query) {
+        try {
+            // Pattern 1: ax + b = c or ax - b = c (e.g. 2x + 7 = 19, 2x - 5 = 15, x + 4 = 10)
+            Pattern p1 = Pattern.compile("(?i)(\\d*)\\s*x\\s*([+\\-])\\s*(\\d+)\\s*=\\s*(\\d+)");
+            Matcher m1 = p1.matcher(query);
+            if (m1.find()) {
+                String aStr = m1.group(1).trim();
+                double a = aStr.isEmpty() ? 1.0 : Double.parseDouble(aStr);
+                String sign = m1.group(2).trim();
+                double b = Double.parseDouble(m1.group(3).trim());
+                double c = Double.parseDouble(m1.group(4).trim());
+
+                double rhs = sign.equals("+") ? (c - b) : (c + b);
+                double x = rhs / a;
+
+                String xFormatted = (x == (long) x) ? String.format("%d", (long) x) : String.format("%.2f", x);
+                String rhsFormatted = (rhs == (long) rhs) ? String.format("%d", (long) rhs) : String.format("%.2f", rhs);
+                String aFormatted = (a == (long) a) ? String.format("%d", (long) a) : String.format("%.2f", a);
+                String bFormatted = (b == (long) b) ? String.format("%d", (long) b) : String.format("%.2f", b);
+                String cFormatted = (c == (long) c) ? String.format("%d", (long) c) : String.format("%.2f", c);
+
+                String oppositeSign = sign.equals("+") ? "-" : "+";
+
+                return "### 📐 Academic Solution & Step-by-Step Calculation\n\n"
+                        + "**Problem**: Solve for $x$ in the linear equation:\n"
+                        + "$$" + aFormatted + "x " + sign + " " + bFormatted + " = " + cFormatted + "$$\n\n"
+                        + "#### Step-by-Step Mathematical Derivation:\n\n"
+                        + "1. **Identify the Given Equation**:\n"
+                        + "   $$" + aFormatted + "x " + sign + " " + bFormatted + " = " + cFormatted + "$$\n\n"
+                        + "2. **Transpose the Constant Term (" + sign + bFormatted + ") to the Right-Hand Side**:\n"
+                        + "   Apply the inverse operation (" + oppositeSign + bFormatted + ") to both sides:\n"
+                        + "   $$" + aFormatted + "x = " + cFormatted + " " + oppositeSign + " " + bFormatted + "$$\n"
+                        + "   $$" + aFormatted + "x = " + rhsFormatted + "$$\n\n"
+                        + "3. **Isolate the Variable ($x$)**:\n"
+                        + "   Divide both sides by the coefficient of $x$ (" + aFormatted + "):\n"
+                        + "   $$x = \\frac{" + rhsFormatted + "}{" + aFormatted + "}$$\n"
+                        + "   $$\\mathbf{x = " + xFormatted + "}$$\n\n"
+                        + "#### 🔍 Verification (Checking LHS = RHS):\n"
+                        + "Substitute $x = " + xFormatted + "$ back into the original left-hand side:\n"
+                        + "$$\\text{LHS} = " + aFormatted + "(" + xFormatted + ") " + sign + " " + bFormatted + " = " + cFormatted + " = \\text{RHS} \\quad \\checkmark$$\n\n"
+                        + "**Final Answer**:\n"
+                        + "$$\\mathbf{x = " + xFormatted + "}$$\n\n"
+                        + "💡 **Exam Tip**: Always explicitly write out both LHS substitution and RHS equality to secure full verification marks in board examinations.";
+            }
+
+            // Pattern 2: ax = b (e.g. 3x = 18)
+            Pattern p2 = Pattern.compile("(?i)(\\d+)\\s*x\\s*=\\s*(\\d+)");
+            Matcher m2 = p2.matcher(query);
+            if (m2.find()) {
+                double a = Double.parseDouble(m2.group(1).trim());
+                double b = Double.parseDouble(m2.group(2).trim());
+                double x = b / a;
+                String xFormatted = (x == (long) x) ? String.format("%d", (long) x) : String.format("%.2f", x);
+                return "### 📐 Academic Solution & Step-by-Step Calculation\n\n"
+                        + "**Problem**: Solve for $x$ in: $$" + (long)a + "x = " + (long)b + "$$\n\n"
+                        + "1. Divide both sides by " + (long)a + ":\n"
+                        + "   $$x = \\frac{" + (long)b + "}{" + (long)a + "} = " + xFormatted + "$$\n\n"
+                        + "**Final Answer**: $$\\mathbf{x = " + xFormatted + "}$$";
+            }
+        } catch (Exception e) {
+            log.debug("Regex equation parser skipped: {}", e.getMessage());
+        }
+
+        if (query.toLowerCase().contains("quadratic") || query.toLowerCase().contains("roots")) {
+            return "### 📐 Quadratic Equations & The Quadratic Formula\n\n"
+                    + "#### Standard Form:\n"
+                    + "$$ax^2 + bx + c = 0 \\quad (a \\neq 0)$$\n\n"
+                    + "#### 1. The Quadratic Formula:\n"
+                    + "$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\n"
+                    + "#### 2. The Discriminant ($D = b^2 - 4ac$):\n"
+                    + "- If $D > 0$: Two distinct real roots ($x_1 \\neq x_2$).\n"
+                    + "- If $D = 0$: Exactly one real repeated root ($x = -b / 2a$).\n"
+                    + "- If $D < 0$: No real roots (two complex conjugate roots).\n\n"
+                    + "#### 3. Sum and Product of Roots (Vieta's Formulas):\n"
+                    + "- **Sum of roots** $(\\alpha + \\beta) = -\\frac{b}{a}$\n"
+                    + "- **Product of roots** $(\\alpha \\beta) = \\frac{c}{a}$";
+        }
+
+        return null;
+    }
+
+    private String generateNewtonsLawsExplanation(String query) {
+        return "### ⚡ Newton's Three Laws of Motion: Comprehensive Physics Guide\n\n"
+                + "Regarding your question: *\"" + query + "\"*\n\n"
+                + "Sir Isaac Newton formulated the three fundamental principles that govern classical mechanics and the motion of all macroscopic objects.\n\n"
+                + "#### 1. Newton's First Law (Law of Inertia)\n"
+                + "- **Statement**: *An object continues in its state of rest or uniform motion in a straight line unless acted upon by a net external unbalanced force.*\n"
+                + "- **Concept of Inertia**: The natural tendency of an object to resist changes in its state of motion. Inertia is directly proportional to mass ($m$).\n"
+                + "- **Real-World Example**: Passengers lean forward when a moving bus brakes suddenly because their upper body tends to remain in motion due to inertia.\n\n"
+                + "#### 2. Newton's Second Law (Law of Force and Momentum)\n"
+                + "- **Statement**: *The rate of change of momentum of a body is directly proportional to the applied unbalanced force and takes place in the direction in which the force acts.*\n"
+                + "- **Mathematical Formulation**:\n"
+                + "  $$F = \\frac{dp}{dt} = m \\cdot a$$\n"
+                + "  Where $F$ = Net Force (Newtons, N), $m$ = mass (kg), $a$ = acceleration ($m/s^2$).\n"
+                + "- **SI Unit**: **Newton (N)**, where $1\\text{ N} = 1\\text{ kg}\\cdot\\text{m/s}^2$.\n"
+                + "- **Real-World Example**: A cricket fielder pulls their hands backward while catching a fast ball. This increases the contact time ($\\Delta t$), reducing the impact force ($F = \\Delta p / \\Delta t$).\n\n"
+                + "#### 3. Newton's Third Law (Action & Reaction)\n"
+                + "- **Statement**: *To every action, there is always an equal and opposite reaction.*\n"
+                + "- **Key Principle**: Forces always occur in matched action-reaction pairs acting on **two different bodies** simultaneously ($F_{AB} = -F_{BA}$).\n"
+                + "- **Real-World Example**: Rocket propulsion — hot exhaust gases expelled downwards create an equal and opposite upward thrust on the rocket.\n\n"
+                + "#### 4. 💡 Exam Essentials\n"
+                + "- **Common Pitfall**: Action and reaction do NOT cancel each other out because they act on **two separate objects**.";
+    }
+
+    private String generateRespirationExplanation(String query) {
+        return "### 🫁 Cellular Respiration: Complete Biological Pathway\n\n"
+                + "#### 1. Core Definition & Balanced Equation\n"
+                + "**Cellular Respiration** is the biochemical catabolic process in living cells where glucose is broken down to produce metabolic energy in the form of **ATP** (Adenosine Triphosphate).\n\n"
+                + "**Overall Balanced Chemical Equation (Aerobic Respiration):**\n"
+                + "$$C_6H_{12}O_6 + 6O_2 \\rightarrow 6CO_2 + 6H_2O + 38\\text{ ATP}$$\n\n"
+                + "#### 2. Three Main Stages of Respiration\n"
+                + "1. **Glycolysis**:\n"
+                + "   - **Location**: **Cytoplasm** (cytosol).\n"
+                + "   - **Process**: 1 molecule of glucose (6C) is cleaved into 2 molecules of Pyruvate (3C). Does not require oxygen (anaerobic step).\n"
+                + "   - **Net Yield**: 2 ATP + 2 NADH.\n\n"
+                + "2. **Krebs Cycle (Citric Acid Cycle)**:\n"
+                + "   - **Location**: **Mitochondrial Matrix**.\n"
+                + "   - **Process**: Acetyl-CoA is oxidized, releasing $CO_2$ and reducing $NAD^+$ and $FAD$ into high-energy electron carriers (NADH, $FADH_2$).\n"
+                + "   - **Yield**: 2 ATP + 6 NADH + 2 $FADH_2$.\n\n"
+                + "3. **Electron Transport Chain (Oxidative Phosphorylation)**:\n"
+                + "   - **Location**: **Inner Mitochondrial Membrane (Cristae)**.\n"
+                + "   - **Process**: Electrons pass through enzyme complexes to oxygen (final electron acceptor), generating a proton gradient that drives ATP Synthase.\n"
+                + "   - **Yield**: ~34 ATP molecules.\n\n"
+                + "#### 3. Aerobic vs Anaerobic Respiration\n"
+                + "- **Aerobic**: Requires $O_2$, complete oxidation of glucose, produces 36–38 ATP, outputs $CO_2$ and $H_2O$.\n"
+                + "- **Anaerobic (Fermentation)**: Occurs without $O_2$, partial breakdown yielding only 2 ATP. In yeast: Ethanol + $CO_2$; In human muscles during strenuous exercise: Lactic Acid.";
+    }
+
+    private String generateAcidsBasesExplanation(String query) {
+        return "### 🧪 Acids, Bases, and Salts: Chemistry Fundamentals\n\n"
+                + "#### 1. Fundamental Definitions\n"
+                + "- **Acids**: Substances that dissociate in aqueous solutions to produce hydrogen ions ($H^+$ or hydronium $H_3O^+$). Taste sour, turn blue litmus red.\n"
+                + "- **Bases / Alkalis**: Substances that produce hydroxide ions ($OH^-$) in aqueous solution. Taste bitter, feel soapy, turn red litmus blue.\n\n"
+                + "#### 2. The pH Scale (0 to 14)\n"
+                + "- **pH < 7**: Acidic (e.g., Stomach Acid pH 1.5, Lemon Juice pH 2.2).\n"
+                + "- **pH = 7**: Neutral (Pure distilled water).\n"
+                + "- **pH > 7**: Basic / Alkaline (e.g., Bleach pH 12, Baking Soda pH 8.5).\n"
+                + "$$\\text{pH} = -\\log_{10}[H^+]$$\n\n"
+                + "#### 3. Neutralization Reaction\n"
+                + "When an acid reacts with a base, they neutralize each other's properties to produce **Salt** and **Water**:\n"
+                + "$$\\text{Acid} + \\text{Base} \\rightarrow \\text{Salt} + \\text{Water}$$\n"
+                + "$$HCl_{(aq)} + NaOH_{(aq)} \\rightarrow NaCl_{(aq)} + H_2O_{(l)}$$\n\n"
+                + "#### 4. Common Indicators for Lab Testing\n"
+                + "- **Litmus**: Acid turns Blue to Red; Base turns Red to Blue.\n"
+                + "- **Phenolphthalein**: Colorless in Acid; Bright Pink in Base.\n"
+                + "- **Methyl Orange**: Red in Acid; Yellow in Base.";
+    }
+
+    private String generateOhmsLawExplanation(String query) {
+        return "### ⚡ Ohm's Law and Electric Circuits: Physics Guide\n\n"
+                + "#### 1. Statement of Ohm's Law\n"
+                + "*The electric current ($I$) flowing through a metallic conductor is directly proportional to the potential difference ($V$) across its ends, provided physical conditions (such as temperature) remain constant.*\n\n"
+                + "#### 2. Mathematical Formula:\n"
+                + "$$V = I \\cdot R$$\n"
+                + "- $V$ = Potential Difference in **Volts (V)**\n"
+                + "- $I$ = Electric Current in **Amperes (A)**\n"
+                + "- $R$ = Electrical Resistance in **Ohms ($\\Omega$)**\n\n"
+                + "#### 3. Resistance Combinations in Circuits\n"
+                + "- **Series Combination**: Current remains constant across each resistor; resistances add up:\n"
+                + "  $$R_{\\text{equivalent}} = R_1 + R_2 + R_3$$\n"
+                + "- **Parallel Combination**: Voltage remains constant across all branches; reciprocals add:\n"
+                + "  $$\\frac{1}{R_{\\text{equivalent}}} = \\frac{1}{R_1} + \\frac{1}{R_2} + \\frac{1}{R_3}$$\n\n"
+                + "#### 4. 💡 Exam Tip\n"
+                + "The V-I characteristic graph for an ohmic conductor is a **straight line passing through the origin**. The slope of this graph ($V / I$) equals the resistance ($R$).";
+    }
+
+    private String generateCellStructureExplanation(String query) {
+        return "### 🔬 Cell Structure and Organelles: Biology Core Guide\n\n"
+                + "The **cell** is the fundamental structural and functional unit of all living organisms.\n\n"
+                + "#### Key Cellular Organelles & Functions:\n"
+                + "1. **Nucleus (The Control Center)**:\n"
+                + "   - Houses genetic material (**DNA** in chromosomes).\n"
+                + "   - Coordinates cellular activities like growth, metabolism, and division.\n\n"
+                + "2. **Mitochondria (Powerhouse of the Cell)**:\n"
+                + "   - Site of aerobic cellular respiration.\n"
+                + "   - Generates energy currency in the form of **ATP** via the Krebs cycle and oxidative phosphorylation.\n\n"
+                + "3. **Ribosomes (Protein Factories)**:\n"
+                + "   - Synthesize proteins by translating messenger RNA (mRNA).\n\n"
+                + "4. **Endoplasmic Reticulum (ER)**:\n"
+                + "   - **Rough ER**: Studded with ribosomes; synthesizes and transports proteins.\n"
+                + "   - **Smooth ER**: Lacks ribosomes; synthesizes lipids and detoxifies chemicals.\n\n"
+                + "5. **Golgi Apparatus**:\n"
+                + "   - Modifies, sorts, packages, and dispatches cellular proteins and lipids.\n\n"
+                + "6. **Chloroplasts (Plants Only)**:\n"
+                + "   - Contain chlorophyll to trap solar energy for photosynthesis.\n\n"
+                + "7. **Cell Wall vs Cell Membrane**:\n"
+                + "   - **Cell Membrane**: Semi-permeable lipid bilayer present in both plant and animal cells.\n"
+                + "   - **Cell Wall**: Rigid cellulose layer present **only in plant cells and fungi**, providing structural rigidity and turgor pressure resistance.";
+    }
+
+    private String generateMnemonicExplanation(String query) {
+        return "### 🧠 Memory Mnemonics & Study Shortcuts\n\n"
+                + "Here are three proven memorization techniques for school exams:\n\n"
+                + "1. **Colors of the Rainbow (Visible Spectrum)**: **ROYGBIV** (Red, Orange, Yellow, Green, Blue, Indigo, Violet).\n"
+                + "2. **Order of Operations in Math**: **BODMAS / PEMDAS** (Brackets, Orders, Division, Multiplication, Addition, Subtraction).\n"
+                + "3. **Oxidation and Reduction in Chemistry**: **OIL RIG** (Oxidation Is Loss of electrons, Reduction Is Gain of electrons).\n"
+                + "4. **Metric Prefixes in Physics**: *King Henry Died By Drinking Chocolate Milk* (Kilo, Hecto, Deka, Base, Deci, Centi, Milli).\n\n"
+                + "Feel free to ask for a custom mnemonic for any formula or sequence you are studying!";
+    }
+
+    private String generateGeneralAcademicExplanation(String query, String topic, String subject, String domain, String extractedText) {
         String detectedSub = detectSubjectFromTopicAndText(query + " " + (topic != null ? topic : ""), extractedText);
 
-        if (qLower.contains("solve") || qLower.contains("equation") || qLower.contains("calculate") || qLower.contains("math") || qLower.contains("roots") || qLower.contains("formula")) {
-            return "### 📐 Academic Solution & Step-by-Step Calculation\n\n"
-                    + "Regarding your question: *\"" + query + "\"*\n\n"
-                    + "1. **Identify the Given Data & Goal**:\n"
-                    + "   - Extract all known coefficients, constants, and variables.\n"
-                    + "   - State the target variable or property to determine.\n\n"
-                    + "2. **Apply the Governing Mathematical Theorem / Formula**:\n"
-                    + "   - Identify the standard curriculum identity applicable to this problem.\n"
-                    + "   - Formulate the relation clearly before numerical substitution.\n\n"
-                    + "3. **Step-by-Step Algebraic / Numerical Execution**:\n"
-                    + "   - Substitute the known values with correct signs.\n"
-                    + "   - Simplify intermediate expressions sequentially.\n"
-                    + "   - Isolate the unknown variable.\n\n"
-                    + "4. **Verification & Concluding Statement**:\n"
-                    + "   - Check the solution by substituting back into the original relation.\n"
-                    + "   - State the final numerical answer with appropriate units.\n\n"
-                    + "💡 **Study Tip**: Always write out each intermediate algebraic step in exams to secure full step marks.";
+        StringBuilder sb = new StringBuilder();
+        sb.append("### 📘 Academic Concept Breakdown: ").append(query).append("\n\n");
+        sb.append("**Curriculum Subject**: ").append(detectedSub).append("\n\n");
+
+        sb.append("#### 1. Core Definition & Foundational Concept\n");
+        sb.append("In ").append(detectedSub).append(", **").append(query).append("** represents a key curriculum principle governing natural or mathematical behavior. ");
+        sb.append("Mastering this concept requires understanding the underlying laws, standard mathematical formulations, and definitions.\n\n");
+
+        if (extractedText != null && !extractedText.isBlank()) {
+            sb.append("#### 2. Key Findings From Study Notes\n");
+            String[] lines = extractedText.split("\\r?\\n");
+            int added = 0;
+            for (String l : lines) {
+                if (l.trim().length() > 25 && added < 4) {
+                    sb.append("- ").append(l.trim()).append("\n");
+                    added++;
+                }
+            }
+            sb.append("\n");
         }
 
-        if (qLower.contains("explain") || qLower.contains("what is") || qLower.contains("concept") || qLower.contains("how") || qLower.contains("why")) {
-            return "### 📘 Academic Explanation & Key Concepts\n\n"
-                    + "Regarding your question: *\"" + query + "\"*\n\n"
-                    + "1. **Core Definition & Principle**:\n"
-                    + "   - In " + detectedSub + ", this topic represents a fundamental curriculum concept governing natural or logical behavior.\n"
-                    + "   - It follows strict conservation laws, standard definitions, and scientific principles.\n\n"
-                    + "2. **Step-by-Step Mechanism / Process**:\n"
-                    + "   - **Phase 1 (Origin/Initiation)**: The initial conditions and trigger factors.\n"
-                    + "   - **Phase 2 (Interaction/Reaction)**: The primary working mechanism and interactions.\n"
-                    + "   - **Phase 3 (Outcome/Result)**: The final product, state, or conclusion.\n\n"
-                    + "3. **Key Real-World Example / Application**:\n"
-                    + "   - This phenomenon is observed directly in everyday applications and laboratory experiments.\n\n"
-                    + "4. **Exam Essentials**:\n"
-                    + "   - Examiners look for: (i) precise scientific terminology, (ii) labeled diagram or formula, and (iii) correct units and boundary conditions.";
-        }
+        sb.append("#### 2. Step-by-Step Understanding & Mechanism\n");
+        sb.append("1. **Prerequisite Knowledge**: Identify the fundamental physical laws, definitions, or equations involved.\n");
+        sb.append("2. **Core Interaction**: Trace the direct relationship between dependent and independent parameters.\n");
+        sb.append("3. **Concluding Application**: Evaluate the theoretical result or numerical solution.\n\n");
 
-        if (qLower.contains("mnemonic") || qLower.contains("remember") || qLower.contains("memory") || qLower.contains("trick")) {
-            return "### 🧠 Memory Mnemonics & Study Shortcuts\n\n"
-                    + "Here are three proven memorization techniques for exams:\n\n"
-                    + "1. **The Acronym Technique**: Take the first letter of each key component or step to form a memorable word.\n"
-                    + "2. **Cause & Effect Association**: Link each concept to its primary cause, central formula, and final outcome.\n"
-                    + "3. **Visual Anchor**: Picture the standard labeled diagram in your mind before answering questions in the exam.\n\n"
-                    + "Feel free to ask for a specific mnemonic for any formula or sequence!";
-        }
+        sb.append("#### 3. 💡 High-Yield Exam Advice\n");
+        sb.append("- **Diagrams & Formulas**: In exams, always write down the governing formula or balanced equation first.\n");
+        sb.append("- **Units & Conditions**: Ensure all values are converted to standard SI units.\n");
+        sb.append("- **Keywords**: Use precise syllabus terminology to secure maximum marks on scoring rubrics.");
 
-        return "### 🎓 SchoolBuddy Academic Tutor Answer\n\n"
-                + "Regarding your question: *\"" + query + "\"*\n\n"
-                + "In " + detectedSub + ", this concept is governed by standard syllabus rules and academic principles.\n\n"
-                + "- **Key Concept**: Focus on the foundational definition and fundamental mechanism.\n"
-                + "- **Formulas / Laws**: Always write the primary governing equation first.\n"
-                + "- **Exam Presentation**: Show step-by-step reasoning and verify all units.\n\n"
-                + "Ask any follow-up question or another academic problem whenever you like!";
+        return sb.toString();
     }
 
     private List<String> generateFollowUps(String topic, String subject) {
