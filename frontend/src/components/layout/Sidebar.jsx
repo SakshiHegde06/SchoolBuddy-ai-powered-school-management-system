@@ -19,8 +19,8 @@ export default function Sidebar({ links }) {
       {/* Brand & Logo Header */}
       <div className="border-b border-slate-800/80 p-5">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-2xl shadow-md shadow-indigo-500/25">
-            🎓
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
+            <Icons.GraduationCap className="h-5 w-5" />
           </div>
 
           <div className="min-w-0">

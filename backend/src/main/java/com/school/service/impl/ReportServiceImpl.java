@@ -136,7 +136,14 @@ public class ReportServiceImpl implements ReportService {
         String cleanId = studentId.replaceAll("[^a-zA-Z0-9]", "");
         String idSnippet = cleanId.substring(0, Math.min(6, cleanId.length())).toUpperCase();
         String verificationCode = "SB-TR-" + idSnippet + "-2026";
-        String verificationUrl = "http://localhost:5173/verify-transcript/" + verificationCode;
+        String frontendBase = System.getenv("FRONTEND_URL");
+        if (frontendBase == null || frontendBase.isBlank()) {
+            frontendBase = "http://localhost:5173";
+        }
+        if (frontendBase.endsWith("/")) {
+            frontendBase = frontendBase.substring(0, frontendBase.length() - 1);
+        }
+        String verificationUrl = frontendBase + "/verify-transcript/" + verificationCode;
 
         return TranscriptReportDto.builder()
                 .studentId(studentId)

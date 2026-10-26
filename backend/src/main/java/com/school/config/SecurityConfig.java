@@ -53,6 +53,7 @@ public class SecurityConfig {
                 // methods, which @EnableMethodSecurity activates above.
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/reports/verify/**").permitAll()
+                .requestMatchers("/api/health").permitAll()
                 .anyRequest().authenticated()
             )
             // Runs JwtAuthFilter before Spring's own username/password filter

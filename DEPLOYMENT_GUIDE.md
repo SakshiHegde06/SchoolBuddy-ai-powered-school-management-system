@@ -89,17 +89,25 @@ After your Vercel frontend URL is assigned (e.g. `https://schoolbuddy-web.vercel
 
 ---
 
-## Step 5: Test & Verify Live Deployment
+## Step 5: Prevent Render From Going to Sleep (Free 24/7 Keep-Alive)
+
+Render free tier web services spin down after 15 minutes of inactivity. To keep your backend running 24/7 with zero cold starts for free:
+
+1. Create a free account at [UptimeRobot](https://uptimerobot.com).
+2. Click **Add New Monitor**:
+   - **Type**: `HTTP(s)`
+   - **Friendly Name**: `SchoolBuddy Ping`
+   - **URL**: `https://your-backend.onrender.com/api/health`
+   - **Interval**: `Every 10 minutes`
+3. Click **Create Monitor**. Your backend will never go to sleep!
+
+---
+
+## Step 6: Test & Verify Live Deployment
 
 1. **Admin Login**:
    - URL: `https://your-app.vercel.app/login`
-   - Default seeded credentials: `admin@school.edu` / `ChangeMe123!` (or your customized admin account).
-2. **Spotlight Command Palette**:
-   - Press `Ctrl + K` or click the search bar to jump between pages or search students instantly.
-3. **Timetable Schedule**:
-   - Admin sets time slots & subjects in `/admin/timetable`.
-   - Log in as teacher (`/teacher`) and student (`/student`) to confirm periods sync accurately with `⭐ Your Class` badges.
-4. **Student Marks Card & Public QR Verification**:
+   - Default seeded credentials: `admin@school.edu` / `ChangeMe123!`
+2. **Student Marks Card & Public QR Verification**:
    - Open any student in `/admin/students` → Click **"Transcript"**.
-   - Print or copy the verification link (`/verify-transcript/SB-...`).
-   - Open the link on your mobile phone or incognito tab to test public verification!
+   - Copy the verification link or scan the QR code from your phone to test public verification!
