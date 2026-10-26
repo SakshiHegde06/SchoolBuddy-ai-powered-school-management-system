@@ -31,7 +31,7 @@ app:
     base-url: ${AI_SERVICE_BASE_URL:http://localhost:8000}
   gemini:
     api-key: ${GEMINI_API_KEY:mock-key}
-    model: ${GEMINI_MODEL:gemini-flash-latest}
+    model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
 
 logging:
   level:

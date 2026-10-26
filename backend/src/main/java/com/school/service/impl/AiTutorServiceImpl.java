@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import java.io.InputStream;
 import java.util.*;
@@ -46,11 +47,18 @@ public class AiTutorServiceImpl implements AiTutorService {
     @Value("${app.gemini.api-key:${GEMINI_API_KEY:mock-key}}")
     private String geminiApiKey;
 
-    @Value("${app.gemini.model:${GEMINI_MODEL:gemini-flash-latest}}")
+    @Value("${app.gemini.model:${GEMINI_MODEL:gemini-3.5-flash-lite}}")
     private String geminiModel;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = createFastRestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static RestTemplate createFastRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(4000);
+        factory.setReadTimeout(8000);
+        return new RestTemplate(factory);
+    }
 
     // Academic keywords and concepts to validate educational scope
     private static final Set<String> ACADEMIC_TERMS = Set.of(
@@ -1471,20 +1479,15 @@ public class AiTutorServiceImpl implements AiTutorService {
 
         List<String> modelsToTry = new ArrayList<>();
         if (geminiModel != null && !geminiModel.isBlank()
-                && !geminiModel.contains("1.5") && !geminiModel.contains("2.0") && !geminiModel.contains("2.5")) {
+                && !geminiModel.contains("1.5") && !geminiModel.contains("2.0") && !geminiModel.contains("2.5")
+                && !geminiModel.equalsIgnoreCase("gemini-flash-latest")) {
             modelsToTry.add(geminiModel.trim());
-        }
-        if (!modelsToTry.contains("gemini-flash-latest")) {
-            modelsToTry.add("gemini-flash-latest");
         }
         if (!modelsToTry.contains("gemini-3.5-flash-lite")) {
             modelsToTry.add("gemini-3.5-flash-lite");
         }
         if (!modelsToTry.contains("gemini-3.5-flash")) {
             modelsToTry.add("gemini-3.5-flash");
-        }
-        if (!modelsToTry.contains("gemini-3.8-flash")) {
-            modelsToTry.add("gemini-3.8-flash");
         }
 
         StringBuilder promptBuilder = new StringBuilder();

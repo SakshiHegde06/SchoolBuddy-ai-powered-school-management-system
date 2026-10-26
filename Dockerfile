@@ -2,10 +2,11 @@ FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
 
 COPY backend/pom.xml ./
-RUN mvn -q dependency:go-offline
+RUN mvn -B -q dependency:resolve
 
 COPY backend/src ./src
-RUN mvn -q -DskipTests package
+RUN mvn -B -DskipTests clean package
+
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
