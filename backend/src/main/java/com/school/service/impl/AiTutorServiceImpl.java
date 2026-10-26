@@ -46,7 +46,7 @@ public class AiTutorServiceImpl implements AiTutorService {
     @Value("${app.gemini.api-key:${GEMINI_API_KEY:mock-key}}")
     private String geminiApiKey;
 
-    @Value("${app.gemini.model:${GEMINI_MODEL:gemini-1.5-flash}}")
+    @Value("${app.gemini.model:${GEMINI_MODEL:gemini-flash-latest}}")
     private String geminiModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -1385,8 +1385,8 @@ public class AiTutorServiceImpl implements AiTutorService {
                     + "Ask me any question on any academic subject, syllabus concept, or homework problem, and I'll explain it clearly step-by-step!";
         }
 
-        // 1. Try Google Gemini Flash (e.g. gemini-1.5-flash / gemini-2.0-flash / gemini-2.5-flash)
-        String geminiAnswer = callGeminiIfConfigured(query, topic, subject);
+        // 1. Try Google Gemini Flash (e.g. gemini-flash-latest, gemini-3.5-flash-lite, gemini-3.5-flash)
+        String geminiAnswer = callGeminiIfConfigured(query, topic, subject, extractedText);
         if (geminiAnswer != null && !geminiAnswer.isBlank()) {
             return geminiAnswer;
         }
@@ -1448,36 +1448,67 @@ public class AiTutorServiceImpl implements AiTutorService {
         return generateGeneralAcademicExplanation(query, topic, subject, domain, extractedText);
     }
 
-    private String callGeminiIfConfigured(String query, String topic, String subject) {
-        if (geminiApiKey == null || geminiApiKey.isBlank() || geminiApiKey.equalsIgnoreCase("mock-key") || geminiApiKey.length() < 15) {
+    private String getEffectiveGeminiApiKey() {
+        if (geminiApiKey != null && !geminiApiKey.isBlank() && !geminiApiKey.equalsIgnoreCase("mock-key") && geminiApiKey.trim().length() > 15) {
+            return geminiApiKey.trim();
+        }
+        String sysEnv = System.getenv("GEMINI_API_KEY");
+        if (sysEnv != null && !sysEnv.isBlank() && !sysEnv.equalsIgnoreCase("mock-key") && sysEnv.trim().length() > 15) {
+            return sysEnv.trim();
+        }
+        String sysProp = System.getProperty("GEMINI_API_KEY");
+        if (sysProp != null && !sysProp.isBlank() && !sysProp.equalsIgnoreCase("mock-key") && sysProp.trim().length() > 15) {
+            return sysProp.trim();
+        }
+        return null;
+    }
+
+    private String callGeminiIfConfigured(String query, String topic, String subject, String extractedText) {
+        String activeKey = getEffectiveGeminiApiKey();
+        if (activeKey == null) {
             return null;
         }
 
         List<String> modelsToTry = new ArrayList<>();
-        if (geminiModel != null && !geminiModel.isBlank()) {
+        if (geminiModel != null && !geminiModel.isBlank()
+                && !geminiModel.contains("1.5") && !geminiModel.contains("2.0") && !geminiModel.contains("2.5")) {
             modelsToTry.add(geminiModel.trim());
         }
-        if (!modelsToTry.contains("gemini-2.0-flash")) {
-            modelsToTry.add("gemini-2.0-flash");
+        if (!modelsToTry.contains("gemini-flash-latest")) {
+            modelsToTry.add("gemini-flash-latest");
         }
-        if (!modelsToTry.contains("gemini-1.5-flash")) {
-            modelsToTry.add("gemini-1.5-flash");
+        if (!modelsToTry.contains("gemini-3.5-flash-lite")) {
+            modelsToTry.add("gemini-3.5-flash-lite");
+        }
+        if (!modelsToTry.contains("gemini-3.5-flash")) {
+            modelsToTry.add("gemini-3.5-flash");
+        }
+        if (!modelsToTry.contains("gemini-3.8-flash")) {
+            modelsToTry.add("gemini-3.8-flash");
         }
 
-        String prompt = "You are an encouraging, expert SchoolBuddy Academic AI Tutor for middle and high school students (Grades 6-12).\n"
-                + "Provide clear, structured, pedagogically sound, step-by-step academic explanations for homework doubts, syllabus topics, and science/math problems.\n"
-                + "Guidelines:\n"
-                + "- Structure your answer with clear markdown subheadings (e.g. Core Definition & Principle, Step-by-Step Explanation / Mechanism / Derivation, Real-World Example, and Exam Essentials).\n"
-                + "- For mathematical equations, solve step-by-step with intermediate lines and show verification.\n"
-                + "- For science concepts, include relevant balanced equations, chemical formulas, and precise scientific terminology.\n"
-                + "- STRICT GUARDRAIL: Only answer academic and educational curriculum questions. Politely decline non-academic topics (video games, celebrity gossip, memes, jokes).\n\n"
-                + "Subject: " + (subject != null ? subject : "General Studies") + "\n"
-                + "Topic: " + (topic != null ? topic : "Academic Inquiry") + "\n"
-                + "Student Question: " + query;
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("You are an encouraging, expert SchoolBuddy Academic AI Tutor for middle and high school students (Grades 6-12).\n")
+                .append("Provide clear, structured, pedagogically sound, step-by-step academic explanations for homework doubts, syllabus topics, and science/math problems.\n")
+                .append("Guidelines:\n")
+                .append("- Structure your answer with clear markdown subheadings (e.g. Core Definition & Principle, Step-by-Step Explanation / Mechanism / Derivation, Real-World Example, and Exam Essentials).\n")
+                .append("- For mathematical equations, solve step-by-step with intermediate lines and show verification.\n")
+                .append("- For science concepts, include relevant balanced equations, chemical formulas, and precise scientific terminology.\n")
+                .append("- STRICT GUARDRAIL: Only answer academic and educational curriculum questions. Politely decline non-academic topics (video games, celebrity gossip, memes, jokes).\n\n")
+                .append("Subject: ").append(subject != null ? subject : "General Studies").append("\n")
+                .append("Topic: ").append(topic != null ? topic : "Academic Inquiry").append("\n");
+
+        if (extractedText != null && !extractedText.isBlank()) {
+            String excerpt = extractedText.length() > 3000 ? extractedText.substring(0, 3000) : extractedText;
+            promptBuilder.append("Relevant Course Notes Excerpt:\n").append(excerpt).append("\n\n");
+        }
+
+        promptBuilder.append("Student Question: ").append(query);
+        String prompt = promptBuilder.toString();
 
         for (String model : modelsToTry) {
             try {
-                String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + geminiApiKey.trim();
+                String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + activeKey;
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1500,6 +1531,7 @@ public class AiTutorServiceImpl implements AiTutorService {
                                 Map firstPart = (Map) parts.get(0);
                                 String text = (String) firstPart.get("text");
                                 if (text != null && !text.isBlank()) {
+                                    log.info("Gemini AI Tutor answered successfully via model {}", model);
                                     return text.trim();
                                 }
                             }
@@ -1512,6 +1544,7 @@ public class AiTutorServiceImpl implements AiTutorService {
         }
         return null;
     }
+
 
     private String callOpenAiIfConfigured(String query, String topic, String subject) {
         if (apiKey == null || apiKey.isBlank() || apiKey.equalsIgnoreCase("mock-key") || apiKey.length() < 15) {
